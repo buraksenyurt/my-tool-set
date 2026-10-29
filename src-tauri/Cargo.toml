@@ -1,0 +1,23 @@
+[package]
+name = "my-tool-set"
+description = "A desktop shell that lists, describes, installs and runs my tools."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+# The `_lib` suffix avoids a name clash between the lib and bin targets on Windows.
+name = "my_tool_set_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+mts-core.workspace = true
+tauri = { version = "2.12", features = [] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+ts-rs.workspace = true

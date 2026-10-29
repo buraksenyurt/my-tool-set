@@ -27,15 +27,36 @@ Uçtan uca yapay zeka araçları desteğinde, fazlar halinde geliştirilmektedir
 
 Rust (workspace) · Tauri 2 · Svelte 5 + TypeScript + Vite · `toml`/`serde` · `portable-pty` + xterm.js
 
-## Klasör düzeni (hedef)
+## Klasör düzeni
 
 ```
-catalog/        araç manifestleri (tool.toml)
-crates/         Rust çekirdeği (katalog, süreç yönetimi)
-src-tauri/      Tauri kabuğu
-src/            Svelte ön yüz
-docs/           plan
+catalog/              araç manifestleri (tool.toml)
+crates/mts-core       domain: araçlar, platformlar (altyapıdan habersiz)
+src-tauri/            Tauri kabuğu: komutlar, DTO'lar, izinler
+src/                  Svelte 5 ön yüz
+  lib/api.ts          Rust ile konuşan tek dosya (tarayıcıda demo veriye düşer)
+  lib/bindings/       Rust tiplerinden üretilen TypeScript tipleri (ts-rs)
+  lib/shell/          kenar çubuğu, sekme çubuğu, çalışma alanı, durum çubuğu
+  lib/views/          sekme içerikleri
+docs/PLAN.md          plan ve yol haritası
 ```
+
+`mts-catalog` (Faz 1) ve `mts-runner` (Faz 3) ilgili fazlarda eklenecek.
+
+## Çalıştırma
+
+```bash
+npm install
+npm run tauri dev          # masaüstü uygulaması
+npm run dev                # yalnızca ön yüz, tarayıcıda demo verilerle (http://localhost:1420)
+cargo test --workspace     # testler; src/lib/bindings altındaki TypeScript tiplerini de yeniler
+```
+
+Gereksinimler easy-git ve java-atlas ile aynı: Rust (1.90+), Node.js LTS, Windows'ta WebView2 ve Visual Studio Build Tools (C++), Linux'ta `libwebkit2gtk-4.1-dev`. Windows'ta derleme sırasında linker hatası alınırsa komutları *Developer Command Prompt for Visual Studio* içinden çalıştır.
+
+## Sürümler
+
+Hazır derlemeler [Releases](https://github.com/buraksenyurt/my-tool-set/releases) sayfasında. Yeni sürüm için `package.json`, `src-tauri/tauri.conf.json` ve `Cargo.toml` içindeki sürümü güncelleyip commit'le, ardından tag'i push'la (`git tag v0.1.0 && git push origin v0.1.0`). [`release`](.github/workflows/release.yml) workflow'u araç repolarındakiyle aynı.
 
 ## Dokümanlar
 

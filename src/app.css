@@ -1,0 +1,98 @@
+/* Design tokens, shared in spirit with easy-git and java-atlas. */
+:root {
+  color-scheme: light;
+  --bg: #f9f9f7;
+  --surface: #fcfcfb;
+  --sidebar: #f2f1ed;
+  --text: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --border: #e1e0d9;
+  --hover: #e9e8e3;
+  --accent: #2a78d6;
+  --accent-soft: #e3eefb;
+  --danger: #d03b3b;
+
+  --radius: 6px;
+  --sidebar-width: 248px;
+  --tabbar-height: 36px;
+  --statusbar-height: 26px;
+
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --surface: #1a1a19;
+    --sidebar: #141413;
+    --text: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --border: #383835;
+    --hover: #262624;
+    --accent: #3987e5;
+    --accent-soft: #16273d;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d0d0d;
+  --surface: #1a1a19;
+  --sidebar: #141413;
+  --text: #ffffff;
+  --text-secondary: #c3c2b7;
+  --muted: #898781;
+  --border: #383835;
+  --hover: #262624;
+  --accent: #3987e5;
+  --accent-soft: #16273d;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+code,
+kbd {
+  font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.92em;
+}
+
+kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+}

@@ -1,9 +1,9 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.3 — 29 Ekim 2026
+> **Doküman sürümü:** v0.4 — 29 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
-> **Durum:** Araç repoları, CI ve release workflow'ları hazır (yeşil) — sıradaki: Faz 0
+> **Durum:** Faz 0 tamamlandı — sıradaki: Faz 1 (katalog ve release'ler)
 
 ---
 
@@ -89,9 +89,9 @@ GitDash ve Docky şimdilik `coding-vibes`'ta; yerel kök + yol ile çalışırla
 my-tool-set/
 ├─ catalog/                 araç manifestleri (her araç için tool.toml)
 ├─ crates/
-│  ├─ mts-core/             domain: Tool, Catalog, HostMode, Platform, doğrulama (altyapıdan habersiz)
-│  ├─ mts-catalog/          manifest okuma, kök çözümleme, release.json okuma, indirme + SHA256 doğrulama
-│  └─ mts-runner/           süreç başlatma/izleme, pty oturumları
+│  ├─ mts-core/             domain: Tool, Catalog, HostMode, Platform, doğrulama (altyapıdan habersiz)  ✅ Faz 0
+│  ├─ mts-catalog/          manifest okuma, kök çözümleme, release.json okuma, indirme + SHA256 doğrulama  (Faz 1)
+│  └─ mts-runner/           süreç başlatma/izleme, pty oturumları  (Faz 3)
 ├─ src-tauri/               Tauri kabuğu: komutlar, state, plugin kayıtları
 ├─ src/                     Svelte 5 ön yüz
 │  ├─ shell/                kenar çubuğu, sekme çubuğu, çalışma alanı, durum çubuğu
@@ -140,11 +140,15 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 
 ## 7. Yol Haritası
 
-### Faz 0 — Atölye kurulumu
-- Tauri 2 + Svelte 5 iskeleti, Rust workspace (`mts-core`, `mts-catalog`, `mts-runner`, `src-tauri`).
-- Boş kabuk düzeni: kenar çubuğu, sekme çubuğu, durum çubuğu.
-- Windows notları (WebView2, VS Build Tools — easy-git'te yaşanan sorun) ve Linux notları (webkit2gtk).
-- Kabuğun kendi `ci.yml` / `release.yml`'ı (araç repolarındaki kalıp).
+### Faz 0 — Atölye kurulumu ✅
+- Tauri 2.12 + Svelte 5 + Vite 8 iskeleti; Rust workspace: `mts-core` + `src-tauri`. Diğer crate'ler kendi fazlarında eklenir (boş crate tutmamak için).
+- `mts-core`: `Platform` (`Os` × `Arch`), derlendiği platformu bulma, `release.json` anahtarlarıyla (`windows-x64` …) çift yönlü dönüşüm.
+- `src-tauri`: `app_info` komutu (sürüm, platform, veri klasörü), ortak `AppError`, ts-rs ile üretilen tipler (`src/lib/bindings`), izinler `core:default` + `core:window:allow-set-theme`.
+- Ön yüz: `api.ts` tek IPC noktası (tarayıcıda demo veri), kenar çubuğu (boş katalog durumu, tema düğmesi, Hakkında), sekme çubuğu (Ana sayfa sabit; Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+W, orta tıkla kapatma), durum çubuğu, Ana sayfa ve Hakkında görünümleri. Açık/koyu/sistem teması, yerel tercih olarak saklanır; yerel başlık çubuğu da temaya uyar.
+- Uygulama ikonu: `src-tauri/icons-source.svg` → `npx tauri icon`.
+- `ci.yml` (svelte-check, build, rustfmt, clippy `-D warnings`, testler, bindings güncel mi) ve `release.yml` (araç repolarındaki şablon, `TOOL=my-tool-set`).
+- CSP şimdilik `null` (easy-git/java-atlas gibi). README'ler ağdan gelmeye başladığında (Faz 2) sıkılaştırılacak.
+- Doğrulama: Linux'ta `tauri build` ve Xvfb altında uygulama açılıp `app_info` verisinin arayüze geldiği görüldü. Windows'ta ilk `npm run tauri dev` ile denenecek.
 
 ### Faz 1 — Katalog ve release'ler
 - Manifest şeması → Rust tipleri (`serde` + `toml`), şema sürümü, doğrulama hataları.

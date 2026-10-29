@@ -1,0 +1,20 @@
+[workspace]
+resolver = "3"
+members = ["crates/mts-core", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+authors = ["Burak Selim Senyurt"]
+
+[workspace.dependencies]
+mts-core = { path = "crates/mts-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+ts-rs = "12"
+
+[profile.dev.package."*"]
+opt-level = 1

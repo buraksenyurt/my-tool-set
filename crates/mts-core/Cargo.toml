@@ -1,0 +1,14 @@
+[package]
+name = "mts-core"
+description = "Domain model for my-tool-set: tools, platforms, hosting modes. Knows nothing about Tauri, the network or the file system."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+ts-rs.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
