@@ -111,10 +111,23 @@ exe.windows = "target/release/easy-git.exe"
 exe.linux   = "target/release/easy-git"
 # ... ya da geliştirme komutu
 dev = "npm run tauri dev"
-args = []                        # cli için varsayılan argümanlar
-# cli araçları için kabuğun soracağı parametreler
-# [[run.params]]
-# name = "repo"; kind = "folder"; label = "Repo klasörü"
+args = []                        # her çalıştırmada en başa eklenen sabit argümanlar
+
+# Terminal araçları için kabuğun formda soracağı parametreler (sırayla):
+[[run.params]]
+name    = "repo"                 # benzersiz ad
+kind    = "folder"               # folder | file | number | text
+label   = "Repo klasörü"         # formdaki etiket
+# default = "..."                # yoksa alan zorunlu; number için sayı
+
+[[run.params]]
+name    = "days"
+kind    = "number"
+label   = "Kaç gün geriye"
+flag    = "--days"               # isteğe bağlı: "--days 60" olarak geçer; yoksa sıralı (positional)
+default = 180
 ```
 
-Şema Faz 1'de `crates/mts-core` içinde Rust tiplerine dönüşecek ve doğrulanacak; alanlar o fazda netleşir.
+Komut satırı şöyle kurulur: `run.args` + her parametre bildirildiği sırayla (`<değer>` ya da `<flag> <değer>`) + formdaki "ek argümanlar" (tırnaklar desteklenir). Boş bırakılan alanın varsayılanı kullanılır; varsayılanı olmayan alan zorunludur.
+
+Şemanın Rust karşılığı ve kuralları `crates/mts-core/src/manifest.rs` (`validate()`), argüman kurma `crates/mts-core/src/args.rs`.

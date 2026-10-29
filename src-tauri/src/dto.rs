@@ -240,3 +240,25 @@ pub struct RunLogEvent {
     pub run_id: u64,
     pub lines: Vec<LogLineDto>,
 }
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TerminalDto {
+    #[ts(type = "number")]
+    pub session_id: u64,
+    pub tool_id: String,
+    /// What runs in the terminal, for the tab header.
+    pub command_line: String,
+    pub cwd: String,
+}
+
+/// Payload of the `terminal-exit` event.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TerminalExitEvent {
+    #[ts(type = "number")]
+    pub session_id: u64,
+    pub code: Option<u32>,
+}

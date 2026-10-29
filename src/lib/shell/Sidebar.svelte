@@ -2,6 +2,7 @@
   import { catalog, toolState } from "../catalog.svelte";
   import type { ToolDto } from "../bindings/ToolDto";
   import { runs } from "../runs.svelte";
+  import { terminals } from "../terminals.svelte";
   import StatePill from "../StatePill.svelte";
   import { openAbout, openIssues, openTool, tabs } from "../tabs.svelte";
   import { theme } from "../theme.svelte";
@@ -125,7 +126,7 @@
               onclick={() => openTool(tool.id, tool.name)}
             >
               <span class="name">
-                {#if runs.active(tool.id, "tool")}<span class="run-dot" title="Çalışıyor"></span>{/if}{tool.name}
+                {#if runs.active(tool.id, "tool") || terminals.running(tool.id) > 0}<span class="run-dot" title="Çalışıyor"></span>{/if}{tool.name}
               </span>
               {#if catalog.progress[tool.id] || runs.active(tool.id, "build")}
                 <span class="busy" aria-label="Kuruluyor"></span>

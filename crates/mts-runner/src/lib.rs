@@ -5,6 +5,8 @@
 //! stdout/stderr and reports changes through an [`EventSink`], so the UI can
 //! follow along without polling.
 //!
+//! [`pty`] runs CLI tools in a pseudo terminal for the embedded terminal.
+//!
 //! Stopping is gentle first and forceful after a grace period, and always
 //! covers the whole process tree: stopping `npm run build` must also stop the
 //! `cargo` it started.
@@ -12,6 +14,7 @@
 mod ansi;
 mod kill;
 mod log;
+pub mod pty;
 
 use std::collections::VecDeque;
 use std::path::PathBuf;

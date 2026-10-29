@@ -3,6 +3,7 @@
   import { catalog } from "../catalog.svelte";
   import { platformLabel } from "../format";
   import { runs } from "../runs.svelte";
+  import { terminals } from "../terminals.svelte";
 
   let { info }: { info: AppInfoDto | null } = $props();
 
@@ -12,7 +13,14 @@
       .join(", "),
   );
   const name = (id: string) => catalog.find(id)?.name ?? id;
-  const runningTools = $derived(runs.running.filter((r) => r.kind === "tool").map((r) => name(r.toolId)));
+  const runningTools = $derived([
+    ...new Set([
+      ...runs.running.filter((r) => r.kind === "tool").map((r) => name(r.toolId)),
+      ...Object.values(terminals.sessions)
+        .filter((s) => s.status === "running")
+        .map((s) => s.toolName),
+    ]),
+  ]);
   const buildingTools = $derived(runs.running.filter((r) => r.kind === "build").map((r) => name(r.toolId)));
   const updates = $derived(
     catalog.tools.filter((t) => t.delivery.type === "release" && t.delivery.updateAvailable).length,

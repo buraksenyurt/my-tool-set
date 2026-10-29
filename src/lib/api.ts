@@ -6,6 +6,7 @@
 
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { AppError } from "./bindings/AppError";
 import type { AppInfoDto } from "./bindings/AppInfoDto";
@@ -17,6 +18,8 @@ import type { LogLineDto } from "./bindings/LogLineDto";
 import type { ReadmeDto } from "./bindings/ReadmeDto";
 import type { RunDto } from "./bindings/RunDto";
 import type { RunLogEvent } from "./bindings/RunLogEvent";
+import type { TerminalDto } from "./bindings/TerminalDto";
+import type { TerminalExitEvent } from "./bindings/TerminalExitEvent";
 import type { UpdateCheckDto } from "./bindings/UpdateCheckDto";
 import {
   demoCatalog,
@@ -24,6 +27,7 @@ import {
   demoInstall,
   demoReadme,
   demoRuns,
+  demoTerminals,
   demoUninstall,
 } from "./demo";
 
@@ -155,4 +159,48 @@ export async function onRunEvents(handlers: {
     offChanged();
     offLog();
   };
+}
+
+// --- Embedded terminal ----------------------------------------------------
+
+/** Starts a terminal tool; output bytes arrive on `onData`. */
+export async function openTerminal(
+  id: string,
+  values: Record<string, string>,
+  extra: string,
+  cols: number,
+  rows: number,
+  onData: (bytes: Uint8Array) => void,
+): Promise<TerminalDto> {
+  if (!inTauri()) return demoTerminals.open(id, cols, rows, onData);
+  const channel = new Channel<ArrayBuffer>();
+  channel.onmessage = (buffer) => onData(new Uint8Array(buffer));
+  return call<TerminalDto>("open_terminal", { id, values, extra, cols, rows, onData: channel });
+}
+
+export async function writeTerminal(sessionId: number, data: string): Promise<void> {
+  if (!inTauri()) return demoTerminals.write(sessionId, data);
+  return call<void>("write_terminal", { sessionId, data });
+}
+
+export async function resizeTerminal(sessionId: number, cols: number, rows: number): Promise<void> {
+  if (!inTauri()) return;
+  return call<void>("resize_terminal", { sessionId, cols, rows });
+}
+
+export async function closeTerminal(sessionId: number): Promise<void> {
+  if (!inTauri()) return demoTerminals.close(sessionId);
+  return call<void>("close_terminal", { sessionId });
+}
+
+export async function onTerminalExit(handler: (e: TerminalExitEvent) => void): Promise<() => void> {
+  if (!inTauri()) return demoTerminals.onExit(handler);
+  return listen<TerminalExitEvent>("terminal-exit", (e) => handler(e.payload));
+}
+
+/** Native folder (or file) picker; `null` when cancelled. */
+export async function pickPath(kind: "folder" | "file", current?: string): Promise<string | null> {
+  if (!inTauri()) return kind === "folder" ? "/home/burak/projeler/easy-git" : "/home/burak/dosya.txt";
+  const picked = await openDialog({ directory: kind === "folder", multiple: false, defaultPath: current || undefined });
+  return typeof picked === "string" ? picked : null;
 }

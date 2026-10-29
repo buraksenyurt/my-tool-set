@@ -7,6 +7,8 @@ import type { InstalledDto } from "./bindings/InstalledDto";
 import type { LogLineDto } from "./bindings/LogLineDto";
 import type { RunDto } from "./bindings/RunDto";
 import type { RunLogEvent } from "./bindings/RunLogEvent";
+import type { TerminalDto } from "./bindings/TerminalDto";
+import type { TerminalExitEvent } from "./bindings/TerminalExitEvent";
 import type { ReadmeDto } from "./bindings/ReadmeDto";
 import type { ToolDto } from "./bindings/ToolDto";
 import type { UpdateCheckDto } from "./bindings/UpdateCheckDto";
@@ -309,3 +311,62 @@ class DemoRuns {
 }
 
 export const demoRuns = new DemoRuns();
+
+// --- Terminal: a tiny line-echo "program" with colours, for UI work.
+
+class DemoTerminals {
+  private sessions = new Map<number, { onData: (b: Uint8Array) => void; line: string }>();
+  private exitHandlers = new Set<(e: TerminalExitEvent) => void>();
+  private nextId = 1;
+  private enc = new TextEncoder();
+
+  async open(toolId: string, cols: number, rows: number, onData: (b: Uint8Array) => void): Promise<TerminalDto> {
+    const sessionId = this.nextId++;
+    this.sessions.set(sessionId, { onData, line: "" });
+    const say = (s: string) => onData(this.enc.encode(s));
+    setTimeout(() => {
+      say(`\x1b[1;32m${toolId}\x1b[0m demo terminali (${cols}x${rows})\r\n`);
+      say("Son 14 gün: \x1b[48;5;22m  \x1b[48;5;28m  \x1b[48;5;34m  \x1b[48;5;40m  \x1b[0m ğüşıöç\r\n");
+      say("Bir şey yaz ve Enter'a bas (çıkmak için: exit)\r\n> ");
+    }, 150);
+    return { sessionId, toolId, commandLine: `${toolId} --demo`, cwd: "(demo)" };
+  }
+
+  async write(sessionId: number, data: string): Promise<void> {
+    const s = this.sessions.get(sessionId);
+    if (!s) throw new Error("oturum yok");
+    const say = (t: string) => s.onData(this.enc.encode(t));
+    for (const ch of data) {
+      if (ch === "\r") {
+        say("\r\n");
+        if (s.line.trim() === "exit") return this.finish(sessionId, 0);
+        say(`yankı: \x1b[36m${s.line}\x1b[0m\r\n> `);
+        s.line = "";
+      } else if (ch === "\x7f") {
+        if (s.line) {
+          s.line = s.line.slice(0, -1);
+          say("\b \b");
+        }
+      } else {
+        s.line += ch;
+        say(ch);
+      }
+    }
+  }
+
+  async close(sessionId: number): Promise<void> {
+    this.finish(sessionId, 1);
+  }
+
+  onExit(h: (e: TerminalExitEvent) => void): () => void {
+    this.exitHandlers.add(h);
+    return () => this.exitHandlers.delete(h);
+  }
+
+  private finish(sessionId: number, code: number) {
+    if (!this.sessions.delete(sessionId)) return;
+    for (const h of this.exitHandlers) h({ sessionId, code });
+  }
+}
+
+export const demoTerminals = new DemoTerminals();

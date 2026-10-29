@@ -1,16 +1,18 @@
 // Open tabs in the workspace. The home tab is always there and cannot be
 // closed; every other tab is opened at most once per id.
 
-export type TabKind = "home" | "about" | "tool" | "issues";
+export type TabKind = "home" | "about" | "tool" | "issues" | "terminal";
 
 export interface Tab {
   id: string;
   kind: TabKind;
   title: string;
   closable: boolean;
-  /** For `tool` tabs. */
+  /** For `tool` and `terminal` tabs. */
   toolId?: string;
 }
+
+type CloseHook = (tab: Tab) => void;
 
 const HOME: Tab = { id: "home", kind: "home", title: "Ana sayfa", closable: false };
 
@@ -19,6 +21,13 @@ class TabsState {
   activeId = $state<string>(HOME.id);
 
   active = $derived(this.list.find((t) => t.id === this.activeId) ?? HOME);
+
+  private closeHooks: CloseHook[] = [];
+
+  /** Lets other stores clean up when one of their tabs closes. */
+  onClose(hook: CloseHook) {
+    this.closeHooks.push(hook);
+  }
 
   /** Opens a tab, or focuses it if it is already open. */
   open(tab: Omit<Tab, "closable"> & { closable?: boolean }) {
@@ -31,7 +40,8 @@ class TabsState {
   close(id: string) {
     const index = this.list.findIndex((t) => t.id === id);
     if (index < 0 || !this.list[index].closable) return;
-    this.list.splice(index, 1);
+    const [closed] = this.list.splice(index, 1);
+    for (const hook of this.closeHooks) hook(closed);
     if (this.activeId === id) {
       // Focus the neighbour on the left, like browsers and editors do.
       this.activeId = this.list[Math.max(0, index - 1)].id;

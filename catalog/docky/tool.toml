@@ -25,5 +25,9 @@ command = "dotnet build src/DockyApp.csproj"
 [run]
 host = "terminal"
 dev  = "dotnet run --project src/DockyApp.csproj --"
-# Alt komutlar: generate | list-models | list-services
-args = ["list-models"]
+
+[[run.params]]
+name    = "command"
+kind    = "text"
+label   = "Komut (generate · list-models · list-services)"
+default = "list-models"

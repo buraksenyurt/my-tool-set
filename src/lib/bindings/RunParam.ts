@@ -4,6 +4,10 @@ import type { ParamValue } from "./ParamValue";
 
 export type RunParam = { name: string, kind: ParamKind, label: string, 
 /**
+ * Passed as `<flag> <value>` (e.g. `--days 60`); positional when unset.
+ */
+flag?: string, 
+/**
  * Omitted (not `null`) when unset, to match the optional field in TypeScript.
  */
 default?: ParamValue, };

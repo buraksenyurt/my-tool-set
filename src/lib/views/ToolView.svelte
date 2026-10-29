@@ -205,7 +205,8 @@
         <p class="note">Manifestte bu işletim sistemi için çalıştırılacak dosya tanımlı değil.</p>
       {/if}
 
-      {#if tool.params.length > 0}
+      <!-- Terminal tools show their parameters as the run form instead. -->
+      {#if tool.params.length > 0 && tool.host !== "terminal"}
         <h3>Parametreler</h3>
         <ul class="params">
           {#each tool.params as param (param.name)}

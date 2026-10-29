@@ -14,6 +14,7 @@ mts-core = { path = "crates/mts-core" }
 mts-catalog = { path = "crates/mts-catalog" }
 mts-runner = { path = "crates/mts-runner" }
 libc = "0.2"
+portable-pty = "0.9"
 ammonia = "4"
 percent-encoding = "2"
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }

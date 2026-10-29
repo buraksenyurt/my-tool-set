@@ -11,6 +11,7 @@ use mts_catalog::install::Installer;
 use mts_catalog::releases::ReleaseClient;
 use mts_catalog::settings::Settings;
 use mts_runner::Runner;
+use mts_runner::pty::PtyManager;
 
 include!(concat!(env!("OUT_DIR"), "/embedded_catalog.rs"));
 
@@ -62,6 +63,8 @@ pub struct AppState {
     pub installing: Mutex<HashSet<String>>,
     /// Set once the app handle exists (it forwards run events to the webview).
     runner: OnceLock<Runner>,
+    /// Embedded terminal sessions.
+    pub terminals: PtyManager,
 }
 
 impl AppState {
@@ -82,6 +85,7 @@ impl AppState {
             settings: RwLock::new(Settings::default()),
             installing: Mutex::new(HashSet::new()),
             runner: OnceLock::new(),
+            terminals: PtyManager::new(),
             client,
             paths,
         };

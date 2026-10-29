@@ -1,9 +1,9 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.7 — 29 Ekim 2026
+> **Doküman sürümü:** v0.8 — 29 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
-> **Durum:** Faz 0–3 tamamlandı — sıradaki: Faz 4 (gömülü terminal, MVP'nin son fazı)
+> **Durum:** MVP tamamlandı (Faz 0–4) — sıradaki: MVP sonrası değerlendirme (modüller, çalışma alanı, paketleme)
 
 ---
 
@@ -91,7 +91,7 @@ my-tool-set/
 ├─ crates/
 │  ├─ mts-core/             domain: Tool, Catalog, HostMode, Platform, doğrulama (altyapıdan habersiz)  ✅ Faz 0
 │  ├─ mts-catalog/          manifest okuma, kök çözümleme, release.json okuma, indirme + SHA256 doğrulama  ✅ Faz 1
-│  └─ mts-runner/           süreç başlatma/izleme/durdurma  ✅ Faz 3 (pty oturumları Faz 4)
+│  └─ mts-runner/           süreç başlatma/izleme/durdurma, pty oturumları  ✅ Faz 3–4
 ├─ src-tauri/               Tauri kabuğu: komutlar, state, plugin kayıtları
 ├─ src/                     Svelte 5 ön yüz
 │  ├─ shell/                kenar çubuğu, sekme çubuğu, çalışma alanı, durum çubuğu
@@ -180,11 +180,13 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 - **Doğrulama:** Linux'ta süreç ağacının tamamen kapandığı, SIGTERM'i yok sayan sürecin bekleme süresi sonunda öldürüldüğü testler. Release derlemesinde kullanıcı kataloğuna eklenen bir yerel araç derlendi → "hazır"a geçti → başlatıldı → canlı log aktı → durduruldu (süreç ve çocukları gitti). Gerçek easy-git GitHub'dan kurulup kabuktan açıldı, kabuktan kapatıldı; kabuk kapandıktan sonra açık easy-git çalışmaya devam etti.
 - **Bekleyen:** terminal araçları (GitDash, Docky) Faz 4'te. Logların diske yazılması gerekirse sonraya.
 
-### Faz 4 — Gömülü terminal (`terminal`)
-- `portable-pty` + xterm.js, yeniden boyutlandırma, çoklu terminal sekmesi.
-- `run.params`'tan parametre formu (klasör seçici, sayı alanı) → komut satırı.
-- GitDash ve Docky'nin kabukta çalışması; GitDash'in ANSI renkli çıktısı doğru görünmeli.
-- **MVP burada tamamlanır.**
+### Faz 4 — Gömülü terminal (`terminal`) ✅ *(MVP tamamlandı)*
+- **mts-runner::pty:** `portable-pty` ile sözde terminal (Windows'ta ConPTY, diğerlerinde Unix pty). Çıktı ham bayt olarak (VT dizileriyle) aktarılır, tuşlar geri yazılır; yeniden boyutlandırma; kapatınca süreç sonlanır. `TERM=xterm-256color`, `COLORTERM=truecolor`.
+- **Windows:** oturum `cmd` altında UTF-8 kod sayfasıyla (65001) açılır; varsayılan 857 kod sayfası UTF-8 çıktıyı bozardı. Komut satırı `%MTS_COMMAND%` ortam değişkeniyle taşınır: `portable-pty` argüman içi tırnakları `\"` ile kaçırıyor, `cmd` bunu anlamıyor; boşluklu yollar böyle bozulmadan geçer.
+- **Manifest:** `run.params`'a isteğe bağlı `flag` (`--days 60`). Argümanlar: `run.args` + parametreler (sıralı ya da bayraklı) + "ek argümanlar" (kabuk gibi tırnaklı ayrıştırma). Varsayılanı olmayan alan zorunlu; `number` alanı tam sayı olmalı (`mts-core::args`). Docky'nin komutu sabit `args` yerine bir form alanı oldu (varsayılan `list-models`; `generate` etkileşimli olarak çalıştırılabilir).
+- **Kabuk:** `open_terminal` (çıktı `Channel<InvokeResponseBody::Raw>` ile ham bayt), `write_terminal`, `resize_terminal`, `close_terminal`; `terminal-exit` olayı. Form değerleri metin olarak alınır, sayı gelirse de kabul edilir. Kabuk kapanınca terminal oturumları da kapanır. Klasör/dosya seçici için `tauri-plugin-dialog` (izin: `dialog:allow-open`).
+- **Arayüz:** terminal araçlarında parametre formu (klasör/dosya için "Seç…", son değerler araç başına hatırlanır), her çalıştırma ayrı terminal sekmesi (`xterm.js` 6 + fit). Terminal sekmeleri gizliyken de bağlı kalır: sekme değişince ekran ve akan çıktı kaybolmaz. Başlıkta komut satırı, durum, Durdur / Yeniden çalıştır. Program, panel boyutlandıktan sonra gerçek sütun/satır sayısıyla başlar. Terminal teması kabuğun açık/koyu temasını izler. Terminal içindeyken Ctrl+W programa gider, sekmeyi kapatmaz.
+- **Doğrulama:** pty testleri (tty olduğu, UTF-8 + kaçış dizilerinin aynen geçtiği, girdi, boyut, kapatma, tırnaklama; Windows'ta UTF-8 ve boşluklu yol/argüman testleri CI'daki Windows job'ında). Release derlemesinde kullanıcı kataloğundaki GitDash benzeri bir araç: form → boşluklu klasör + `--days 60` → 256 renk ısı haritası ve Türkçe karakterler → klavye girdisi → sekme değiştirip dönünce içerik yerinde → Durdur / Yeniden çalıştır → sekme kapanınca süreç sonlandı. Bu sırada bulunup düzeltilenler: sayı alanının sayı göndermesi, uzun komut satırının başlığı taşırması, programın panel boyutlanmadan 80x24 ile başlaması.
 
 ### Faz 5 — İlk modül: easy-git (`module`) *(MVP sonrası, seçenek B)*
 - Önce MVP deneyimine bakılarak B'ye geçmeye değip değmeyeceğine karar verilir.
@@ -210,11 +212,11 @@ Yalnızca bu plan. Faz kararları ve öğrenilenler buraya işlenir; ayrı öğr
 
 ## 9. MVP Kabul Kriterleri (Faz 0–4)
 
-- [ ] Kabuk Windows'ta açılıyor, Linux'ta en az katalog ve terminal çalışıyor.
-- [ ] Beş aracın tamamı kenar çubuğunda kategorili listeleniyor; README'leri görselleriyle okunabiliyor.
-- [ ] easy-git, java-atlas ve DockerCity release'ten indirilip SHA256 ile doğrulanarak kuruluyor; yeni sürüm olduğunda kabuk bunu gösteriyor.
-- [ ] DockerCity, easy-git, java-atlas dış süreç olarak başlatılıp durdurulabiliyor; loglar görünüyor.
-- [ ] GitDash ve Docky gömülü terminalde parametre formuyla çalışıyor.
+- [x] Kabuk Windows'ta açılıyor (Burak doğruladı), Linux'ta katalog, kurulum, başlatma ve terminal çalışıyor.
+- [x] Beş aracın tamamı kenar çubuğunda kategorili listeleniyor; README'leri görselleriyle okunabiliyor.
+- [x] easy-git, java-atlas ve DockerCity release'ten indirilip SHA256 ile doğrulanarak kuruluyor (Windows'ta doğrulandı). "Güncelleme var" akışı ilk ikinci sürümle gerçek GitHub'da denenecek.
+- [x] DockerCity, easy-git, java-atlas dış süreç olarak başlatılıp durdurulabiliyor (Windows'ta doğrulandı); loglar görünüyor.
+- [ ] GitDash ve Docky gömülü terminalde parametre formuyla çalışıyor — Linux'ta benzer bir araçla doğrulandı; Windows'ta GitDash ve Docky ile denenecek.
 
 ## 10. Riskler ve Açık Konular
 

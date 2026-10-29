@@ -4,6 +4,7 @@
 //! (`release.json`) and the platforms they run on. Reading those files from
 //! disk or GitHub, and installing tools, lives in mts-catalog.
 
+pub mod args;
 pub mod manifest;
 mod platform;
 pub mod release;

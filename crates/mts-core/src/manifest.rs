@@ -138,6 +138,10 @@ pub struct RunParam {
     pub name: String,
     pub kind: ParamKind,
     pub label: String,
+    /// Passed as `<flag> <value>` (e.g. `--days 60`); positional when unset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub flag: Option<String>,
     /// Omitted (not `null`) when unset, to match the optional field in TypeScript.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -256,6 +260,14 @@ impl ToolManifest {
 
         let mut seen = std::collections::BTreeSet::new();
         for param in &self.run.params {
+            if let Some(flag) = &param.flag
+                && (!flag.starts_with('-') || flag.contains(char::is_whitespace))
+            {
+                problem(format!(
+                    "run.params.{}: flag \"{flag}\" - ile başlamalı ve boşluk içermemeli",
+                    param.name
+                ));
+            }
             if !seen.insert(param.name.as_str()) {
                 problem(format!(
                     "run.params içinde \"{}\" iki kez geçiyor",
@@ -424,17 +436,19 @@ mod tests {
                 name: "days".into(),
                 kind: ParamKind::Number,
                 label: "Gün".into(),
+                flag: None,
                 default: Some(ParamValue::Text("180".into())),
             },
             RunParam {
                 name: "days".into(),
                 kind: ParamKind::Number,
                 label: "Gün".into(),
+                flag: Some("days".into()),
                 default: Some(ParamValue::Number(180)),
             },
         ];
-        // wrong default type + duplicate name
-        assert_eq!(m.validate().len(), 2);
+        // wrong default type + bad flag + duplicate name
+        assert_eq!(m.validate().len(), 3);
     }
 
     #[test]
@@ -443,6 +457,7 @@ mod tests {
             name: "repo".into(),
             kind: ParamKind::Folder,
             label: "Repo".into(),
+            flag: None,
             default: None,
         };
         let json = serde_json::to_string(&param).unwrap();

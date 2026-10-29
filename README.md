@@ -10,7 +10,7 @@ Uçtan uca yapay zeka araçları desteğinde, fazlar halinde geliştirilmektedir
 - **Bilgi** — aracın README'si (kurulu sürümün tag'inden) ve ekran görüntüleri kabuğun içinde okunur; çevrimdışıyken önbellekten.
 - **Kur / güncelle** — araçlar kendi repolarının GitHub Releases'ından indirilir, SHA256 ile doğrulanır.
 - **Başlat / izle** — araç ayrı bir süreç olarak açılır; durum ve log kabukta izlenir, kabuktan durdurulur. Yerel araçlar kabuktan derlenir.
-- **Gömülü terminal** — CLI araçları (GitDash, Docky) kabuğun içindeki terminal sekmesinde çalışır.
+- **Gömülü terminal** — CLI araçları (GitDash, Docky) manifestten oluşan bir parametre formuyla kabuğun içindeki terminal sekmesinde çalışır; renkler, etkileşimli menüler ve klavye girdisi desteklenir.
 - **Modüller** *(MVP sonrası)* — Tauri ile yazılmış araçların (easy-git, java-atlas) kabuğun içinde kendi sekmesinde açılması değerlendirilecek.
 
 ## Kapsamdaki araçlar
@@ -25,7 +25,7 @@ Uçtan uca yapay zeka araçları desteğinde, fazlar halinde geliştirilmektedir
 
 ## Yığın
 
-Rust (workspace) · Tauri 2 · Svelte 5 + TypeScript + Vite · `toml`/`serde` · `portable-pty` + xterm.js
+Rust (workspace) · Tauri 2 · Svelte 5 + TypeScript + Vite · `toml`/`serde` · `reqwest` + `rustls` · `pulldown-cmark` + `ammonia` · `portable-pty` + xterm.js
 
 ## Klasör düzeni
 
@@ -33,7 +33,7 @@ Rust (workspace) · Tauri 2 · Svelte 5 + TypeScript + Vite · `toml`/`serde` ·
 catalog/              araç manifestleri (tool.toml)
 crates/mts-core       domain: tool.toml, release.json, platformlar, sürümler (I/O yok)
 crates/mts-catalog    katalog okuma, settings.toml, release.json indirme, kurulum, README işleme
-crates/mts-runner     araçları ve derlemeleri başlatma, log toplama, süreç ağacını durdurma
+crates/mts-runner     araçları ve derlemeleri başlatma, log toplama, süreç ağacını durdurma, terminal (pty) oturumları
 src-tauri/            Tauri kabuğu: komutlar, DTO'lar, izinler
 src/                  Svelte 5 ön yüz
   lib/api.ts          Rust ile konuşan tek dosya (tarayıcıda demo veriye düşer)

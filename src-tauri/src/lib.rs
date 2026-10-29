@@ -7,6 +7,7 @@ mod dto;
 mod error;
 mod runs;
 mod state;
+mod terminal;
 
 use tauri::Manager;
 
@@ -16,6 +17,7 @@ use state::{AppState, Paths};
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .register_asynchronous_uri_scheme_protocol(docs::SCHEME, |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -54,14 +56,21 @@ pub fn run() {
             runs::stop_run,
             runs::list_runs,
             runs::run_log,
+            terminal::open_terminal,
+            terminal::write_terminal,
+            terminal::resize_terminal,
+            terminal::close_terminal,
         ])
         .build(tauri::generate_context!())
         .expect("error while building my-tool-set")
         .run(|app, event| {
             // Builds are the shell's business and end with it; tools the user
             // opened keep running.
+            // Terminal sessions live in the shell's tabs and end with it too.
             if let tauri::RunEvent::Exit = event {
-                app.state::<AppState>().runner().stop_builds();
+                let state = app.state::<AppState>();
+                state.runner().stop_builds();
+                state.terminals.close_all();
             }
         });
 }

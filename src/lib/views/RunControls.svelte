@@ -3,6 +3,7 @@
   import { clock } from "../clock.svelte";
   import { formatAgo } from "../format";
   import { describeEnd, formatDuration, runs } from "../runs.svelte";
+  import RunForm from "./RunForm.svelte";
 
   let { tool, onShowLogs }: { tool: ToolDto; onShowLogs: () => void } = $props();
 
@@ -26,9 +27,18 @@
       ["ready", "notBuilt", "fromSource"].includes(tool.delivery.status.kind),
   );
   const notBuilt = $derived(tool.delivery.type === "local" && tool.delivery.status.kind === "notBuilt");
+
+  /** Terminal tools that have something to run (installed / built / from source). */
+  const canRunInTerminal = $derived.by(() => {
+    if (tool.host !== "terminal") return false;
+    const d = tool.delivery;
+    if (d.type === "release") return d.installed.length > 0;
+    return d.status.kind === "ready" || d.status.kind === "fromSource";
+  });
 </script>
 
 <section class="run">
+  {#if running || canStart || canBuild || (tool.host === "terminal" && !canRunInTerminal) || (tool.host !== "terminal" && tool.delivery.type === "release")}
   <div class="row">
     {#if running}
       <button class="stop" onclick={() => runs.stop(running)}>■ Durdur</button>
@@ -38,8 +48,10 @@
       </span>
     {:else if canStart}
       <button class="primary" onclick={() => runs.start(tool.id)}>▶ Başlat</button>
-    {:else if tool.host === "terminal"}
-      <span class="hint">Gömülü terminalde çalışır; terminal bir sonraki fazda geliyor.</span>
+    {:else if tool.host === "terminal" && !canRunInTerminal}
+      <span class="hint">
+        {notBuilt ? "Terminalde çalıştırmak için önce derle." : "Terminalde çalıştırmak için önce yerel klasörü ayarla."}
+      </span>
     {:else if tool.delivery.type === "release"}
       <span class="hint">Başlatmak için önce kur.</span>
     {/if}
@@ -58,6 +70,11 @@
       {/if}
     {/if}
   </div>
+  {/if}
+
+  {#if canRunInTerminal}
+    <RunForm {tool} />
+  {/if}
 
   {#if error}
     <p class="error" role="alert">{error}</p>
