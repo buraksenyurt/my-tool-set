@@ -1,9 +1,9 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.2 — 29 Ekim 2026
+> **Doküman sürümü:** v0.3 — 29 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
-> **Durum:** Araç repoları ve release workflow'ları hazır — sıradaki: ilk release'ler, ardından Faz 0
+> **Durum:** Araç repoları, CI ve release workflow'ları hazır (yeşil) — sıradaki: Faz 0
 
 ---
 
@@ -23,7 +23,7 @@ Bu projede öğreti dokümanı yazılmıyor; doğrudan fazlar halinde kodlanıyo
 **Kapsam kararları:**
 
 - Olgunlaşan araçlar kendi repolarında yaşar ve GitHub Releases ile dağıtılır; `my-tool-set` yalnızca manifest tutar, release'leri indirir ve çağırır. Yerel klasör bağımlılığı yok (bkz. §5.1).
-- Kabuk araçları **değiştirmez**; modül entegrasyonu (Faz 5–6) gerektiğinde araç tarafında geriye uyumlu bir refactor yapılır.
+- Kabuk araçları **değiştirmez**. MVP'de her araç dış süreç ya da terminal olarak çalışır; modül entegrasyonu (Faz 5–6) MVP sonrasına bırakıldı.
 - Oyunlar (MissionControl, LunarRace, Walkure) ve web uygulamaları (DoDi, Friendly) ilk kapsam dışında. Manifest şeması bunları sonradan eklemeye engel olmayacak.
 
 ## 3. Envanter ve Seçim
@@ -56,11 +56,13 @@ Her araç manifestinde `run.host` alanıyla üç moddan birini seçer:
 
 | Mod | Ne olur | Kim |
 |---|---|---|
-| `external` | Araç ayrı bir süreç ve pencere olarak açılır. Kabuk PID, durum (çalışıyor / çıktı kodu), stdout/stderr loglarını izler; durdurabilir. | DockerCity; Faz 5–6'ya kadar easy-git ve java-atlas |
+| `external` | Araç ayrı bir süreç ve pencere olarak açılır. Kabuk PID, durum (çalışıyor / çıktı kodu), stdout/stderr loglarını izler; durdurabilir. | DockerCity, easy-git, java-atlas (MVP) |
 | `terminal` | Araç kabuğun içindeki bir terminal sekmesinde (pty + xterm.js) çalışır. Manifestteki `run.params` ile küçük bir parametre formu çıkar. | GitDash, Docky |
-| `module` | Araç bir **Tauri plugin**'i olarak kabuğa derlenir; arayüzü kabuğun içinde kendi sekmesinde açılır. | easy-git (Faz 5), java-atlas (Faz 6) |
+| `module` *(MVP sonrası)* | Araç bir **Tauri plugin**'i olarak kabuğa derlenir; arayüzü kabuğun içinde kendi sekmesinde açılır. | Aday: easy-git (Faz 5), java-atlas (Faz 6) |
 
-Modül yaklaşımı *(açık karar, bkz. §10)*: aracın `src-tauri` içindeki komutları bir `tauri-plugin-<araç>` crate'ine taşınır (komutlar `plugin:<araç>|<komut>` ad alanına girer, çakışma olmaz). Svelte arayüzü kök bileşeni dışa açan bir pakete dönüşür. Araç kendi başına çalışmaya devam eder: kendi `src-tauri`'si yalnızca bu plugin'i kaydeden ince bir kabuk olur.
+**Karar (29 Ekim 2026):** MVP'de modül yok (seçenek A). Tauri plugin + tag'e sabitlenmiş git bağımlılığı (seçenek B) MVP sonrasında değerlendirilecek. Pencere konumlandırarak gömme taklidi (seçenek C) kırılgan olduğu için reddedildi.
+
+B'ye geçilirse modül yaklaşımı: aracın `src-tauri` içindeki komutları bir `tauri-plugin-<araç>` crate'ine taşınır (komutlar `plugin:<araç>|<komut>` ad alanına girer, çakışma olmaz). Svelte arayüzü kök bileşeni dışa açan bir pakete dönüşür. Araç kendi başına çalışmaya devam eder: kendi `src-tauri`'si yalnızca bu plugin'i kaydeden ince bir kabuk olur.
 
 ### 5.1 Dağıtım: GitHub Releases
 
@@ -94,7 +96,7 @@ my-tool-set/
 ├─ src/                     Svelte 5 ön yüz
 │  ├─ shell/                kenar çubuğu, sekme çubuğu, çalışma alanı, durum çubuğu
 │  ├─ views/                araç kartı, README görünümü, log paneli, terminal
-│  └─ modules/              modül araçlarının sekme bağlayıcıları
+│  └─ modules/              (MVP sonrası) modül araçlarının sekme bağlayıcıları
 └─ docs/  PLAN.md
 ```
 
@@ -167,13 +169,15 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 - `portable-pty` + xterm.js, yeniden boyutlandırma, çoklu terminal sekmesi.
 - `run.params`'tan parametre formu (klasör seçici, sayı alanı) → komut satırı.
 - GitDash ve Docky'nin kabukta çalışması; GitDash'in ANSI renkli çıktısı doğru görünmeli.
+- **MVP burada tamamlanır.**
 
-### Faz 5 — İlk modül: easy-git (`module`) *(MVP)*
+### Faz 5 — İlk modül: easy-git (`module`) *(MVP sonrası, seçenek B)*
+- Önce MVP deneyimine bakılarak B'ye geçmeye değip değmeyeceğine karar verilir.
 - easy-git `src-tauri` komutlarının `tauri-plugin-easy-git` crate'ine taşınması (easy-git tek başına çalışmaya devam eder).
-- Svelte arayüzünün kök bileşeni dışa açan pakete dönüşmesi; kabukta sekmede açılması.
+- Svelte arayüzünün kök bileşeni dışa açan pakete dönüşmesi (büyük olasılıkla GitHub Packages); kabukta sekmede açılması.
 - Bağımlılık stratejisi: tag'e sabitlenmiş git bağımlılığı (`git = "https://github.com/buraksenyurt/easy-git", tag = "v…"`); yerel klasör bağımlılığı yok.
 
-### Faz 6 — İkinci modül: java-atlas
+### Faz 6 — İkinci modül: java-atlas *(MVP sonrası)*
 - Faz 5 kalıbının tekrarı; ortak noktalar kabukta bir "modül sözleşmesi"ne (TS arayüzü + Rust trait) dönüşür.
 
 ### Faz 7 — Çalışma alanı ve kalıcılık
@@ -189,23 +193,22 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 
 Yalnızca bu plan. Faz kararları ve öğrenilenler buraya işlenir; ayrı öğreti dokümanı yok.
 
-## 9. MVP Kabul Kriterleri (Faz 0–5)
+## 9. MVP Kabul Kriterleri (Faz 0–4)
 
 - [ ] Kabuk Windows'ta açılıyor, Linux'ta en az katalog ve terminal çalışıyor.
 - [ ] Beş aracın tamamı kenar çubuğunda kategorili listeleniyor; README'leri görselleriyle okunabiliyor.
 - [ ] easy-git, java-atlas ve DockerCity release'ten indirilip SHA256 ile doğrulanarak kuruluyor; yeni sürüm olduğunda kabuk bunu gösteriyor.
 - [ ] DockerCity, easy-git, java-atlas dış süreç olarak başlatılıp durdurulabiliyor; loglar görünüyor.
 - [ ] GitDash ve Docky gömülü terminalde parametre formuyla çalışıyor.
-- [ ] easy-git kabuğun içinde sekmede açılıyor ve kendi başına da çalışmaya devam ediyor.
 
 ## 10. Riskler ve Açık Konular
 
 | Konu | Not |
 |---|---|
-| **Modül modu (açık karar)** | İkili dağıtım `external` ve `terminal` modlarına uyuyor; `module` modu kodun kabuğa derlenmesini gerektirir. Seçenekler: modülleri ilk kapsamdan çıkarmak ya da plugin crate'lerini tag'e sabitlenmiş git bağımlılığıyla almak. Faz 5'ten önce karar verilecek. |
-| İlk release'ler | Workflow'lar `actionlint`/`shellcheck`'ten geçti; easy-git ve java-atlas'ın CI adımları ile easy-git'in Linux derleme + paketleme adımı yerelde denendi. Windows, macOS ve DockerCity bacakları ilk gerçek tag'de doğrulanacak. |
+| Modül modu (MVP sonrası) | B seçilirse kabuk araç sürümüne bağlanır (araç her güncellendiğinde kabuk da yeniden derlenir), Svelte arayüzü paket olarak yayınlanmalı, Tauri/Svelte sürümleri hizalı kalmalı. |
+| İlk release'ler | Üç reponun CI'ı yeşil. Release'lerin tüm platform bacakları ilk tag'lerde doğrulanacak. |
 | macOS imzasız | `.app` imzasız; kabuk dosyayı kendisi indirdiği için Gatekeeper karantinası genelde düşmez, ilk denemede doğrulanacak. Yalnızca Apple Silicon derleniyor. |
-| Sürüm hizası | Kabuk ve modül araçları aynı Tauri/Svelte sürümlerinde olmalı; Faz 0'da sabitlenecek. |
+| Sürüm hizası | MVP'de gerekmiyor; modül modu gelirse kabuk ve araçlar aynı Tauri/Svelte sürümlerinde olmalı. |
 | easy-git platformu | Release workflow'u platform başına `--bundles` veriyor; Linux derlemesi ve AppImage paketleme sorunsuz. Linux'ta çalışma zamanı henüz denenmedi. |
 | DockerCity | Release'te `PublishTrimmed=false` ile self-contained yayınlanıyor (EF Core/WinUI trimming'e uygun değil). ARM64 derlemesi x64 runner'da çapraz derleniyor; ilk tag'de doğrulanacak. |
 | GitDash | `build.zig` yok, `zig build-exe` ile derleniyor; Windows'ta ANSI renk desteği terminalde test edilecek. |
