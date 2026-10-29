@@ -1,13 +1,15 @@
 // Open tabs in the workspace. The home tab is always there and cannot be
 // closed; every other tab is opened at most once per id.
 
-export type TabKind = "home" | "about";
+export type TabKind = "home" | "about" | "tool" | "issues";
 
 export interface Tab {
   id: string;
   kind: TabKind;
   title: string;
   closable: boolean;
+  /** For `tool` tabs. */
+  toolId?: string;
 }
 
 const HOME: Tab = { id: "home", kind: "home", title: "Ana sayfa", closable: false };
@@ -47,3 +49,9 @@ class TabsState {
 export const tabs = new TabsState();
 
 export const openAbout = () => tabs.open({ id: "about", kind: "about", title: "Hakkında" });
+
+export const openIssues = () =>
+  tabs.open({ id: "issues", kind: "issues", title: "Katalog sorunları" });
+
+export const openTool = (id: string, name: string) =>
+  tabs.open({ id: `tool:${id}`, kind: "tool", title: name, toolId: id });

@@ -39,20 +39,39 @@ Her release, dosyalarının yanında bir `release.json` taşır. Kabuk dosya adl
 
 - `platforms` anahtarları: `windows-x64`, `windows-arm64`, `linux-x64`, `macos-arm64`.
 - `portable.format`: `zip` | `tar.gz` | `file`. `entry`, arşiv açıldıktan sonra çalıştırılacak dosya.
-- Kabuk `portable` dosyasını indirir, SHA256'yı doğrular, `<veri-klasörü>/tools/<id>/<sürüm>/` altına açar. `installers` yalnızca bilgi amaçlı.
+- Kabuk `release.json`'u `github.com/<repo>/releases/latest/download/release.json` adresinden alır; GitHub API'si (ve onun istek sınırı) kullanılmaz.
+- `portable` dosyasını indirir, boyut ve SHA256'yı doğrular, `tools/<id>/<sürüm>/` altına açar. Yarım kalan kurulum kurulu sayılmaz (`.mts-install.json` işareti yalnızca başarılı kurulumda yazılır). `installers` yalnızca bilgi amaçlı.
 - README ve ekran görüntüleri, release tag'indeki repo içeriğinden okunur.
 
 Release'leri üreten workflow ve betikler her aracın reposunda: `.github/workflows/release.yml`, `scripts/release/`.
 
+## Katalog kaynakları
+
+Kabuk manifestleri sırayla üç yerden okur; sonra gelen aynı `id`'yi ezer:
+
+1. **Gömülü** — bu klasör, derleme anında uygulamaya gömülür (`src-tauri/build.rs`). Kurulu bir kabuk repoya ihtiyaç duymaz.
+2. **Repo** — yalnızca geliştirme (debug) derlemelerinde, bu klasör çalışma anında doğrudan okunur. Manifest düzenlemek için yeniden derleme gerekmez.
+3. **Kullanıcı** — ayar klasöründeki `catalog/<id>/tool.toml` dosyaları. Kendi araçlarını eklemek ya da yerleşik bir aracı geçersiz kılmak için.
+
+Okunamayan ya da kurallara uymayan bir manifest diğerlerini engellemez; kabukta "Katalog sorunları" olarak listelenir.
+
+## Klasörler
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Ayarlar (`settings.toml`, `catalog/`) | `%APPDATA%\dev.buraksenyurt.mytoolset` | `~/.config/dev.buraksenyurt.mytoolset` | `~/Library/Application Support/dev.buraksenyurt.mytoolset` |
+| Kurulu araçlar (`tools/`), önbellek (`cache/`) | `%LOCALAPPDATA%\dev.buraksenyurt.mytoolset` | `~/.local/share/dev.buraksenyurt.mytoolset` | `~/Library/Application Support/dev.buraksenyurt.mytoolset` |
+
 ## Kök yolları
 
-Release'i olmayan araçlar için manifestler mutlak yol içermez. Her araç bir **kök** adına (`root`) ve o köke göre göreli bir yola (`path`) bağlanır. Kökün diskteki karşılığı makineye özgü ayar dosyasında tutulur:
+Release'i olmayan araçlar için manifestler mutlak yol içermez. Her araç bir **kök** adına (`root`) ve o köke göre göreli bir yola (`path`) bağlanır. Kökün diskteki karşılığı `settings.toml`'da tutulur; dosya ilk açılışta şablon olarak oluşturulur:
 
 ```toml
-# %APPDATA%/my-tool-set/settings.toml  (Linux: ~/.config/my-tool-set, macOS: ~/Library/Application Support/my-tool-set)
 [roots]
 coding-vibes = "C:/Users/burak/Development/coding-vibes"
 ```
+
+Dosyayı düzenledikten sonra kabukta "Kataloğu yeniden yükle" yeterli.
 
 ## Şema (v0 taslağı)
 

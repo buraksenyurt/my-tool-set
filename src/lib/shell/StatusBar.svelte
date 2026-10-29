@@ -1,13 +1,34 @@
 <script lang="ts">
   import type { AppInfoDto } from "../bindings/AppInfoDto";
+  import { catalog } from "../catalog.svelte";
   import { platformLabel } from "../format";
 
   let { info }: { info: AppInfoDto | null } = $props();
+
+  const installing = $derived(
+    Object.keys(catalog.progress)
+      .map((id) => catalog.find(id)?.name ?? id)
+      .join(", "),
+  );
+  const updates = $derived(
+    catalog.tools.filter((t) => t.delivery.type === "release" && t.delivery.updateAvailable).length,
+  );
 </script>
 
 <footer>
-  <span>Çalışan araç yok</span>
+  <span>
+    {#if installing}
+      {installing} kuruluyor…
+    {:else if catalog.checking}
+      Güncellemeler denetleniyor…
+    {:else if updates > 0}
+      {updates} araç için güncelleme var
+    {:else}
+      Çalışan araç yok
+    {/if}
+  </span>
   <span class="right">
+    {#if catalog.data}<span>{catalog.tools.length} araç</span>{/if}
     {#if info}
       <span>{platformLabel(info.platform)}</span>
       <span>v{info.version}</span>

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/mts-core", "src-tauri"]
+members = ["crates/mts-core", "crates/mts-catalog", "src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
@@ -11,6 +11,21 @@ authors = ["Burak Selim Senyurt"]
 
 [workspace.dependencies]
 mts-core = { path = "crates/mts-core" }
+mts-catalog = { path = "crates/mts-catalog" }
+flate2 = "1"
+futures-util = "0.3"
+hex = "0.4"
+# TLS through ring rather than reqwest's default aws-lc-rs: no extra build tools
+# on Windows. Certificates are verified against the OS store (platform verifier).
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "stream"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+semver = "1"
+sha2 = "0.11"
+tar = "0.4"
+tempfile = "3"
+tokio = { version = "1", features = ["fs", "io-util", "macros", "rt-multi-thread", "sync"] }
+toml = "1"
+zip = { version = "9", default-features = false, features = ["deflate"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

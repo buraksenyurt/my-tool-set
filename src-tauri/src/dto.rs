@@ -1,7 +1,8 @@
 //! Shapes sent to the front end. Generated as TypeScript into src/lib/bindings
 //! by `cargo test` (ts-rs), so both sides always agree.
 
-use mts_core::Platform;
+use mts_core::manifest::{RunParam, Support};
+use mts_core::{HostMode, Platform, ToolKind};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -13,6 +14,139 @@ pub struct AppInfoDto {
     pub version: String,
     /// `None` when the shell runs on a platform the tools are never released for.
     pub platform: Option<Platform>,
-    /// Where installed tools and settings will live.
+    /// Installed tools and caches.
     pub data_dir: String,
+    /// settings.toml and the user catalog.
+    pub config_dir: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CatalogDto {
+    pub tools: Vec<ToolDto>,
+    pub issues: Vec<IssueDto>,
+    pub settings_file: String,
+    pub user_catalog_dir: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct IssueDto {
+    pub location: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ToolDto {
+    pub id: String,
+    pub name: String,
+    pub summary: String,
+    pub category: String,
+    pub kind: ToolKind,
+    pub stack: Vec<String>,
+    pub tags: Vec<String>,
+    pub host: HostMode,
+    pub origin: OriginDto,
+    /// What the manifest says about this OS.
+    pub support: Support,
+    pub params: Vec<RunParam>,
+    pub delivery: DeliveryDto,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum OriginDto {
+    Embedded,
+    Repository,
+    User,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(tag = "type", rename_all = "camelCase")]
+#[ts(export)]
+pub enum DeliveryDto {
+    #[serde(rename_all = "camelCase")]
+    Release {
+        repo: String,
+        /// Newest first.
+        installed: Vec<InstalledDto>,
+        /// From the last successful check (or the cache).
+        latest: Option<LatestDto>,
+        update_available: bool,
+    },
+    #[serde(rename_all = "camelCase")]
+    Local {
+        status: LocalStatusDto,
+        build_command: Option<String>,
+        dev_command: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct InstalledDto {
+    pub version: String,
+    pub folder: String,
+    pub entry: String,
+    /// Seconds since the Unix epoch.
+    #[ts(type = "number")]
+    pub installed_at: u64,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct LatestDto {
+    pub version: String,
+    pub tag: String,
+    /// Seconds since the Unix epoch.
+    #[ts(type = "number")]
+    pub fetched_at: u64,
+    /// Does the release contain a build for this platform?
+    pub has_build: bool,
+    /// Download size for this platform, in bytes.
+    #[ts(type = "number | null")]
+    pub asset_size: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+#[ts(export)]
+pub enum LocalStatusDto {
+    Ready { folder: String, exe: String },
+    NotBuilt { folder: String },
+    FromSource { folder: String },
+    UnknownRoot { root: String },
+    MissingFolder { folder: String },
+    NoExeForOs,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct UpdateCheckDto {
+    pub id: String,
+    pub version: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(tag = "step", rename_all = "camelCase")]
+#[ts(export)]
+pub enum InstallProgressDto {
+    #[serde(rename_all = "camelCase")]
+    Downloading {
+        #[ts(type = "number")]
+        received: u64,
+        #[ts(type = "number")]
+        total: u64,
+    },
+    Verifying,
+    Unpacking,
 }

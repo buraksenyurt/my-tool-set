@@ -7,6 +7,10 @@ export type AppInfoDto = { name: string, version: string,
  */
 platform: Platform | null, 
 /**
- * Where installed tools and settings will live.
+ * Installed tools and caches.
  */
-dataDir: string, };
+dataDir: string, 
+/**
+ * settings.toml and the user catalog.
+ */
+configDir: string, };

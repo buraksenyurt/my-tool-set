@@ -16,8 +16,14 @@ tauri-build = { version = "2.7", features = [] }
 
 [dependencies]
 mts-core.workspace = true
+mts-catalog.workspace = true
+futures-util.workspace = true
 tauri = { version = "2.12", features = [] }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 ts-rs.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

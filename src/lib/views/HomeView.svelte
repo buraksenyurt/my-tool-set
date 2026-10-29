@@ -11,7 +11,7 @@
   <ul class="features">
     <li>
       <strong>Katalog</strong>
-      <span>Her araç bir <code>tool.toml</code> manifesti ile tanımlanır; ne işe yaradığı ve hangi platformda çalıştığı burada görünür.</span>
+      <span>Her araç bir <code>tool.toml</code> manifesti ile tanımlanır. Soldaki listeden bir araç seçerek ne işe yaradığını, hangi platformda çalıştığını ve kurulum durumunu görebilirsin.</span>
     </li>
     <li>
       <strong>Kur ve güncelle</strong>

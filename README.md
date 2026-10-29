@@ -31,7 +31,8 @@ Rust (workspace) · Tauri 2 · Svelte 5 + TypeScript + Vite · `toml`/`serde` ·
 
 ```
 catalog/              araç manifestleri (tool.toml)
-crates/mts-core       domain: araçlar, platformlar (altyapıdan habersiz)
+crates/mts-core       domain: tool.toml, release.json, platformlar, sürümler (I/O yok)
+crates/mts-catalog    katalog okuma, settings.toml, release.json indirme, kurulum
 src-tauri/            Tauri kabuğu: komutlar, DTO'lar, izinler
 src/                  Svelte 5 ön yüz
   lib/api.ts          Rust ile konuşan tek dosya (tarayıcıda demo veriye düşer)
@@ -41,7 +42,7 @@ src/                  Svelte 5 ön yüz
 docs/PLAN.md          plan ve yol haritası
 ```
 
-`mts-catalog` (Faz 1) ve `mts-runner` (Faz 3) ilgili fazlarda eklenecek.
+`mts-runner` (Faz 3) ilgili fazda eklenecek.
 
 ## Çalıştırma
 
@@ -50,6 +51,12 @@ npm install
 npm run tauri dev          # masaüstü uygulaması
 npm run dev                # yalnızca ön yüz, tarayıcıda demo verilerle (http://localhost:1420)
 cargo test --workspace     # testler; src/lib/bindings altındaki TypeScript tiplerini de yeniler
+```
+
+Geliştirme derlemesinde `MTS_RELEASE_BASE` ortam değişkeni, release'leri GitHub yerine aynı URL düzenindeki başka bir sunucudan okutur (yayınlamadan kurulum denemek için):
+
+```bash
+MTS_RELEASE_BASE=http://127.0.0.1:8765 npm run tauri dev
 ```
 
 Gereksinimler easy-git ve java-atlas ile aynı: Rust (1.90+), Node.js LTS, Windows'ta WebView2 ve Visual Studio Build Tools (C++), Linux'ta `libwebkit2gtk-4.1-dev`. Windows'ta derleme sırasında linker hatası alınırsa komutları *Developer Command Prompt for Visual Studio* içinden çalıştır.

@@ -28,8 +28,11 @@
         {/if}
       </dd>
 
-      <dt>Veri klasörü</dt>
+      <dt>Araçlar ve önbellek</dt>
       <dd><code>{info.dataDir}</code></dd>
+
+      <dt>Ayarlar</dt>
+      <dd><code>{info.configDir}</code></dd>
 
       <dt>Kaynak</dt>
       <dd><code>github.com/buraksenyurt/my-tool-set</code></dd>

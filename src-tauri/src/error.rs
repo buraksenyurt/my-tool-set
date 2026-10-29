@@ -16,6 +16,19 @@ pub struct AppError {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum ErrorKind {
+    /// No tool with that id in the catalog.
+    UnknownTool,
+    /// The tool is local, or the action does not apply to it.
+    NotApplicable,
+    /// An install of this tool is already running.
+    Busy,
+    /// GitHub could not be reached or answered with an error.
+    Network,
+    /// Size or SHA256 did not match release.json.
+    Integrity,
+    /// No build for this OS/CPU in the release.
+    NoBuildForPlatform,
+    /// Disk, archive or anything else.
     Internal,
 }
 
@@ -25,5 +38,20 @@ impl AppError {
             kind,
             message: message.into(),
         }
+    }
+}
+
+impl From<mts_catalog::CatalogError> for AppError {
+    fn from(err: mts_catalog::CatalogError) -> Self {
+        use mts_catalog::CatalogError as E;
+        let kind = match &err {
+            E::Http { .. } | E::BadReleaseJson(..) => ErrorKind::Network,
+            E::SizeMismatch { .. } | E::ShaMismatch { .. } | E::InvalidRelease(_) => {
+                ErrorKind::Integrity
+            }
+            E::NoBuildForPlatform { .. } => ErrorKind::NoBuildForPlatform,
+            _ => ErrorKind::Internal,
+        };
+        Self::new(kind, err.to_string())
     }
 }

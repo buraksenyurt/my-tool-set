@@ -1,9 +1,9 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.4 — 29 Ekim 2026
+> **Doküman sürümü:** v0.5 — 29 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
-> **Durum:** Faz 0 tamamlandı — sıradaki: Faz 1 (katalog ve release'ler)
+> **Durum:** Faz 0–1 tamamlandı — sıradaki: Faz 2 (kabuk ve bilgi görünümü)
 
 ---
 
@@ -90,7 +90,7 @@ my-tool-set/
 ├─ catalog/                 araç manifestleri (her araç için tool.toml)
 ├─ crates/
 │  ├─ mts-core/             domain: Tool, Catalog, HostMode, Platform, doğrulama (altyapıdan habersiz)  ✅ Faz 0
-│  ├─ mts-catalog/          manifest okuma, kök çözümleme, release.json okuma, indirme + SHA256 doğrulama  (Faz 1)
+│  ├─ mts-catalog/          manifest okuma, kök çözümleme, release.json okuma, indirme + SHA256 doğrulama  ✅ Faz 1
 │  └─ mts-runner/           süreç başlatma/izleme, pty oturumları  (Faz 3)
 ├─ src-tauri/               Tauri kabuğu: komutlar, state, plugin kayıtları
 ├─ src/                     Svelte 5 ön yüz
@@ -150,16 +150,19 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 - CSP şimdilik `null` (easy-git/java-atlas gibi). README'ler ağdan gelmeye başladığında (Faz 2) sıkılaştırılacak.
 - Doğrulama: Linux'ta `tauri build` ve Xvfb altında uygulama açılıp `app_info` verisinin arayüze geldiği görüldü. Windows'ta ilk `npm run tauri dev` ile denenecek.
 
-### Faz 1 — Katalog ve release'ler
-- Manifest şeması → Rust tipleri (`serde` + `toml`), şema sürümü, doğrulama hataları.
-- `release.json` okuma (GitHub API, önbellek, 60 istek/saat sınırına dikkat), platform anahtarı seçimi.
-- İndirme + SHA256 doğrulama + arşiv açma (`zip`, `tar.gz`, `file`), kurulu sürümlerin takibi.
-- `settings.toml` ve kök çözümleme (`[source]` araçları); platform durumu hesaplama (`yes/untested/no`).
-- `cargo test` ile fixture manifestleri ve `release.json` örnekleri.
+### Faz 1 — Katalog ve release'ler ✅
+- **Katalog kaynağı (karar):** gömülü + yerel ek. `catalog/` derleme anında gömülür (`build.rs`), debug derlemelerinde repodaki `catalog/` doğrudan okunur, ayar klasöründeki `catalog/<id>/tool.toml` aynı id'yi ezer. Bozuk manifest diğerlerini engellemez, "Katalog sorunları" sekmesinde listelenir.
+- **mts-core:** `ToolManifest` (serde, `deny_unknown_fields`) + `validate()` kuralları (kebab-case id, `owner/name` repo, release ile yerel alanların karışmaması, güvenli göreli yollar, parametre varsayılanlarının türü, `module` reddi); `ReleaseManifest` + `validate()` (şema, araç/repo eşleşmesi, semver, tag = v+sürüm, dosya adı, SHA256 biçimi); `Version` (semver).
+- **mts-catalog:** `catalog`, `settings` (kökler, `LocalStatus`: hazır / derlenmemiş / kaynaktan / kök yok / klasör yok), `releases` (GitHub API'siz: `releases/latest/download/release.json`, akışlı indirme + SHA256, söz verilen boyutu aşan indirmeyi keser), `cache` (son release.json, çevrimdışı açılış), `install` (`.partial-<sürüm>` → doğrulama → açma → `.mts-install.json` işareti → yerine taşıma; zip-slip ve tar dışına yazma reddi; tek dosyaya çalıştırma izni; Windows'ta antivirüs kilidine karşı yeniden denenen taşıma; idempotent; kaldırma).
+- **TLS:** reqwest + rustls `ring` sağlayıcısıyla; `aws-lc-rs` yok (Windows'ta ek derleme aracı istemesin). Sertifikalar işletim sisteminin deposundan doğrulanır.
+- **Kabuk:** `list_tools`, `reload_catalog`, `check_updates` (paralel; biri düşerse diğerleri sürer), `install_tool` (channel ile ilerleme, aynı araç için çift kurulum engeli), `uninstall_tool`. Açılışta önbellekteki bilgi hemen gösterilir, ardından güncellemeler denetlenir. İlk açılışta `settings.toml` şablonu yazılır.
+- **Ön yüz:** kenar çubuğunda kategorili araç listesi + arama (Faz 2'den öne alındı), durum rozetleri, araç sekmesi (sürüm, kur/güncelle + ilerleme, kurulu sürümler ve iki adımlı kaldırma; yerel araçlarda ayar ve derleme yönergesi), katalog sorunları sekmesi, durum çubuğunda kurulum/denetim/güncelleme bilgisi.
+- **Doğrulama:** 69 test (zip-slip, kurcalanmış dosya, yarım indirme, 404, boyut aşımı dahil). Linux'ta debug derlemesi `MTS_RELEASE_BASE` ile yerel bir sunucuya bağlanıp gerçek easy-git AppImage'ını (79 MB) indirdi, doğruladı ve kurdu; `settings.toml` + yeniden yükleme ile GitDash "hazır" durumuna geçti.
+- **Bekleyen:** easy-git, java-atlas ve DockerCity için henüz yayınlanmış release yok (`latest/download/release.json` 404). Kabuk bunları "Sürüm yok" diye gösteriyor; ilk tag'lerden sonra gerçek GitHub ile denenecek.
 
 ### Faz 2 — Kabuk ve bilgi görünümü
-- Kenar çubuğunda kategorili araç listesi, arama.
-- Araç kartı: özet, yığın, platform rozetleri, eylem düğmeleri.
+- ~~Kenar çubuğunda kategorili araç listesi, arama~~ (Faz 1'de yapıldı).
+- Araç sekmesinin zenginleştirilmesi (Faz 1'de temel hali var).
 - README görünümü: markdown → HTML (release tag'indeki README), göreli görsellerin çözülmesi, ekran görüntüsü galerisi.
 - Kur / güncelle düğmeleri, kurulu ve son sürüm bilgisi.
 - Sekme yönetimi (aç/kapat/sırala).
