@@ -12,6 +12,9 @@ authors = ["Burak Selim Senyurt"]
 [workspace.dependencies]
 mts-core = { path = "crates/mts-core" }
 mts-catalog = { path = "crates/mts-catalog" }
+ammonia = "4"
+percent-encoding = "2"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 flate2 = "1"
 futures-util = "0.3"
 hex = "0.4"

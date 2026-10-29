@@ -4,12 +4,13 @@
 import type { CatalogDto } from "./bindings/CatalogDto";
 import type { InstallProgressDto } from "./bindings/InstallProgressDto";
 import type { InstalledDto } from "./bindings/InstalledDto";
+import type { ReadmeDto } from "./bindings/ReadmeDto";
 import type { ToolDto } from "./bindings/ToolDto";
 import type { UpdateCheckDto } from "./bindings/UpdateCheckDto";
 
 const now = () => Math.floor(Date.now() / 1000);
 
-const tools: ToolDto[] = [
+const tools: BaseTool[] = [
   {
     id: "docker-city",
     name: "DockerCity",
@@ -124,9 +125,28 @@ const tools: ToolDto[] = [
   },
 ];
 
+// Placeholder picture for the gallery (an SVG data URL; the CSP allows data:).
+const SHOT =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400"><rect width="640" height="400" fill="#dfe8f4"/><g fill="#2a78d6"><rect x="40" y="60" width="560" height="14" rx="7"/><rect x="40" y="110" width="380" height="14" rx="7" opacity=".6"/><circle cx="120" cy="250" r="40"/><circle cx="320" cy="250" r="40" opacity=".7"/><circle cx="520" cy="250" r="40" opacity=".4"/></g></svg>`,
+  );
+
+type BaseTool = Omit<ToolDto, "screenshots" | "webUrl" | "docRevision">;
+
+function withDocs(t: BaseTool): ToolDto {
+  const release = t.delivery.type === "release";
+  return {
+    ...t,
+    screenshots: t.id === "easy-git" ? [SHOT, SHOT] : [],
+    webUrl: t.delivery.type === "release" ? `https://github.com/${t.delivery.repo}` : null,
+    docRevision: release ? "v0.1.0" : "local",
+  };
+}
+
 export function demoCatalog(): CatalogDto {
   return {
-    tools: structuredClone(tools),
+    tools: structuredClone(tools).map(withDocs),
     issues: [],
     settingsFile: "(tarayıcı önizlemesi)/settings.toml",
     userCatalogDir: "(tarayıcı önizlemesi)/catalog",
@@ -142,6 +162,26 @@ export async function demoCheckUpdates(): Promise<UpdateCheckDto[]> {
       version: t.delivery.type === "release" ? (t.delivery.latest?.version ?? null) : null,
       error: null,
     }));
+}
+
+export async function demoReadme(id: string): Promise<ReadmeDto> {
+  await sleep(300);
+  const tool = tools.find((t) => t.id === id);
+  return {
+    html: `<h1 id="user-content-${id}">${tool?.name ?? id}</h1>
+<p>${tool?.summary ?? ""}</p>
+<p><img src="${SHOT}" alt="Ekran görüntüsü"></p>
+<h2 id="user-content-kurulum">Kurulum</h2>
+<pre><code>npm install
+npm run tauri dev</code></pre>
+<p>Ayrıntılar için <a href="https://github.com/buraksenyurt/${id}" rel="noopener noreferrer">GitHub</a> ve <a href="#user-content-kurulum">kurulum</a>.</p>
+<table><thead><tr><th>Katman</th><th>Hedef</th></tr></thead><tbody><tr><td>Ürün</td><td>Tek bakışta anlaşılır bir harita</td></tr></tbody></table>
+<blockquote><p>Demo içerik: tarayıcı önizlemesi.</p></blockquote>`,
+    revision: "v0.1.0",
+    webUrl: `https://github.com/buraksenyurt/${id}/blob/v0.1.0/README.md`,
+    stale: false,
+    error: null,
+  };
 }
 
 export async function demoInstall(

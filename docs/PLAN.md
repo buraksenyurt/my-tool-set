@@ -1,9 +1,9 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.5 — 29 Ekim 2026
+> **Doküman sürümü:** v0.6 — 29 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
-> **Durum:** Faz 0–1 tamamlandı — sıradaki: Faz 2 (kabuk ve bilgi görünümü)
+> **Durum:** Faz 0–2 tamamlandı — sıradaki: Faz 3 (başlat ve izle)
 
 ---
 
@@ -147,7 +147,7 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 - Ön yüz: `api.ts` tek IPC noktası (tarayıcıda demo veri), kenar çubuğu (boş katalog durumu, tema düğmesi, Hakkında), sekme çubuğu (Ana sayfa sabit; Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+W, orta tıkla kapatma), durum çubuğu, Ana sayfa ve Hakkında görünümleri. Açık/koyu/sistem teması, yerel tercih olarak saklanır; yerel başlık çubuğu da temaya uyar.
 - Uygulama ikonu: `src-tauri/icons-source.svg` → `npx tauri icon`.
 - `ci.yml` (svelte-check, build, rustfmt, clippy `-D warnings`, testler, bindings güncel mi) ve `release.yml` (araç repolarındaki şablon, `TOOL=my-tool-set`).
-- CSP şimdilik `null` (easy-git/java-atlas gibi). README'ler ağdan gelmeye başladığında (Faz 2) sıkılaştırılacak.
+- CSP Faz 0'da `null` başladı, Faz 2'de sıkılaştırıldı.
 - Doğrulama: Linux'ta `tauri build` ve Xvfb altında uygulama açılıp `app_info` verisinin arayüze geldiği görüldü. Windows'ta ilk `npm run tauri dev` ile denenecek.
 
 ### Faz 1 — Katalog ve release'ler ✅
@@ -160,12 +160,15 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 - **Doğrulama:** 69 test (zip-slip, kurcalanmış dosya, yarım indirme, 404, boyut aşımı dahil). Linux'ta debug derlemesi `MTS_RELEASE_BASE` ile yerel bir sunucuya bağlanıp gerçek easy-git AppImage'ını (79 MB) indirdi, doğruladı ve kurdu; `settings.toml` + yeniden yükleme ile GitDash "hazır" durumuna geçti.
 - **Bekleyen:** easy-git, java-atlas ve DockerCity için henüz yayınlanmış release yok (`latest/download/release.json` 404). Kabuk bunları "Sürüm yok" diye gösteriyor; ilk tag'lerden sonra gerçek GitHub ile denenecek.
 
-### Faz 2 — Kabuk ve bilgi görünümü
-- ~~Kenar çubuğunda kategorili araç listesi, arama~~ (Faz 1'de yapıldı).
-- Araç sekmesinin zenginleştirilmesi (Faz 1'de temel hali var).
-- README görünümü: markdown → HTML (release tag'indeki README), göreli görsellerin çözülmesi, ekran görüntüsü galerisi.
-- Kur / güncelle düğmeleri, kurulu ve son sürüm bilgisi.
-- Sekme yönetimi (aç/kapat/sırala).
+### Faz 2 — README ve görseller ✅
+- **Kaynak:** release araçlarında README, aracın reposundan tag'e göre okunur: kuruluysa kurulu sürümün tag'i (README elindeki sürümle uyuşsun), değilse son bilinen tag, hiç sürüm yoksa `HEAD`. Yerel araçlarda araç klasöründen. Dosyalar `raw.githubusercontent.com` üzerinden, GitHub API'siz gelir.
+- **Önbellek:** `cache/docs/<id>/<revizyon>/<yol>`. Tag'ler değişmediği için önbellekteki kopya doğrudan kullanılır; `HEAD` her seferinde yeniden alınır, önbellek yalnızca çevrimdışı yedeğidir ("Çevrimdışı · önbellekteki kopya" rozeti).
+- **Markdown (Rust):** `pulldown-cmark` (tablo, üstü çizili, görev listesi, dipnot) → `ammonia` ile temizleme (script, olay öznitelikleri, `style`, yabancı şemalar gider). Göreli görseller `mtsimg` adreslerine, göreli linkler tag'deki GitHub dosyasına yazılır; repoyu terk eden yollar düşer; dış görseller yalnızca aracın kendi reposundansa tutulur. Başlıklara GitHub tarzı, `user-content-` önekli id'ler (sayfa içi linkler çalışır, kabuğun kendi id'leriyle çakışmaz).
+- **`mtsimg` protokolü:** webview ağa hiç çıkmaz. `mtsimg://localhost/<id>/<revizyon>/<yol>` (Windows'ta `http://mtsimg.localhost/...`) yalnızca katalogdaki bir aracın, kabuğun o an gösterdiği revizyondaki görsellerini sunar; yalnızca görsel türleri, en çok 20 MB, yerel klasörde sembolik link ya da `..` ile dışarı çıkılamaz. Asenkron işleyici: inen görsel arayüzü kilitlemez.
+- **CSP (sıkılaştırıldı):** `default-src 'self'`, `script-src 'self'`, `img-src 'self' data: mtsimg: http://mtsimg.localhost`, `connect-src ipc: http://ipc.localhost`, `object-src/frame-src 'none'`. Geliştirme için ayrı `devCsp` (Vite HMR için `ws://localhost:1420`).
+- **Linkler:** README içindeki linkler kabuğun penceresini asla değiştirmez; `tauri-plugin-opener` ile sistem tarayıcısında açılır (izin: yalnızca `opener:allow-open-url`). `#` linkleri sayfa içinde kaydırır.
+- **Arayüz:** araç sekmesi "Genel bakış" ve "README" alt sekmelerine ayrıldı; manifestteki `screenshots` galerisi; görsel büyütme penceresi (Esc / tıkla kapat, odak geri döner); başlıkta "GitHub ↗"; hata durumunda "Tekrar dene".
+- **Doğrulama:** toplam 86 test (URL yeniden yazma, temizleme, slug, önbellek, çevrimdışı yedek, boyut sınırı, klasör dışına çıkma, sembolik link). Linux'ta release derlemesi (CSP açık) gerçek GitHub'dan easy-git README'sini v0.1.0'dan ve 10 görseli `mtsimg` üzerinden gösterdi; ağ kesilince önbellekten açıldı, önbellekte olmayan java-atlas anlaşılır bir hata verdi.
 
 ### Faz 3 — Süreç yönetimi (`external`)
 - Başlat/durdur, PID ve çıktı kodu, stdout/stderr'in channel ile akması, log paneli.

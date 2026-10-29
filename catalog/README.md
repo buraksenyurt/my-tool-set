@@ -41,7 +41,7 @@ Her release, dosyalarının yanında bir `release.json` taşır. Kabuk dosya adl
 - `portable.format`: `zip` | `tar.gz` | `file`. `entry`, arşiv açıldıktan sonra çalıştırılacak dosya.
 - Kabuk `release.json`'u `github.com/<repo>/releases/latest/download/release.json` adresinden alır; GitHub API'si (ve onun istek sınırı) kullanılmaz.
 - `portable` dosyasını indirir, boyut ve SHA256'yı doğrular, `tools/<id>/<sürüm>/` altına açar. Yarım kalan kurulum kurulu sayılmaz (`.mts-install.json` işareti yalnızca başarılı kurulumda yazılır). `installers` yalnızca bilgi amaçlı.
-- README ve ekran görüntüleri, release tag'indeki repo içeriğinden okunur.
+- README ve ekran görüntüleri (`source.readme`, `source.screenshots`) repodan okunur: kurulu sürümün tag'inden, yoksa son sürümün tag'inden, hiç sürüm yoksa `HEAD`'den. Yerel araçlarda araç klasöründen.
 
 Release'leri üreten workflow ve betikler her aracın reposunda: `.github/workflows/release.yml`, `scripts/release/`.
 

@@ -10,6 +10,7 @@ use mts_core::{Delivery, Platform};
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 
+use crate::docs::{doc_source, screenshot_urls};
 use crate::dto::*;
 use crate::error::{AppError, ErrorKind};
 use crate::state::AppState;
@@ -248,7 +249,14 @@ fn catalog_dto(state: &AppState) -> CatalogDto {
                     }
                 }
             };
+            let docs = doc_source(state, m);
             ToolDto {
+                screenshots: screenshot_urls(m, &docs),
+                doc_revision: docs.revision().map(str::to_string),
+                web_url: m
+                    .release
+                    .as_ref()
+                    .map(|r| format!("https://github.com/{}", r.repo)),
                 id: m.id.clone(),
                 name: m.name.clone(),
                 summary: m.summary.clone(),

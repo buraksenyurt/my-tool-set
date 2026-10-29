@@ -7,7 +7,7 @@ Uçtan uca yapay zeka araçları desteğinde, fazlar halinde geliştirilmektedir
 ## Neler olacak
 
 - **Katalog** — her araç bir `tool.toml` manifesti ile tanımlanır: ne işe yarar, hangi yığınla yazıldı, hangi platformda çalışır, nasıl başlatılır.
-- **Bilgi** — aracın README'si ve ekran görüntüleri kabuğun içinde okunur.
+- **Bilgi** — aracın README'si (kurulu sürümün tag'inden) ve ekran görüntüleri kabuğun içinde okunur; çevrimdışıyken önbellekten.
 - **Kur / güncelle** — araçlar kendi repolarının GitHub Releases'ından indirilir, SHA256 ile doğrulanır.
 - **Başlat / izle** — araç ayrı bir süreç olarak açılır; durum ve log kabukta izlenir.
 - **Gömülü terminal** — CLI araçları (GitDash, Docky) kabuğun içindeki terminal sekmesinde çalışır.
@@ -32,7 +32,7 @@ Rust (workspace) · Tauri 2 · Svelte 5 + TypeScript + Vite · `toml`/`serde` ·
 ```
 catalog/              araç manifestleri (tool.toml)
 crates/mts-core       domain: tool.toml, release.json, platformlar, sürümler (I/O yok)
-crates/mts-catalog    katalog okuma, settings.toml, release.json indirme, kurulum
+crates/mts-catalog    katalog okuma, settings.toml, release.json indirme, kurulum, README işleme
 src-tauri/            Tauri kabuğu: komutlar, DTO'lar, izinler
 src/                  Svelte 5 ön yüz
   lib/api.ts          Rust ile konuşan tek dosya (tarayıcıda demo veriye düşer)

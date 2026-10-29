@@ -6,6 +6,7 @@ use std::sync::{Mutex, RwLock};
 
 use mts_catalog::cache::ReleaseCache;
 use mts_catalog::catalog::{self, Catalog, Origin};
+use mts_catalog::docs::DocStore;
 use mts_catalog::install::Installer;
 use mts_catalog::releases::ReleaseClient;
 use mts_catalog::settings::Settings;
@@ -28,6 +29,8 @@ pub struct Paths {
     pub tools: PathBuf,
     /// Cached release.json files.
     pub release_cache: PathBuf,
+    /// Cached README files and pictures.
+    pub doc_cache: PathBuf,
     /// settings.toml
     pub settings: PathBuf,
     /// Extra or overriding tool.toml files.
@@ -39,6 +42,7 @@ impl Paths {
         Self {
             tools: local_data.join("tools"),
             release_cache: local_data.join("cache").join("releases"),
+            doc_cache: local_data.join("cache").join("docs"),
             settings: config.join("settings.toml"),
             user_catalog: config.join("catalog"),
         }
@@ -52,6 +56,7 @@ pub struct AppState {
     pub client: ReleaseClient,
     pub cache: ReleaseCache,
     pub installer: Installer,
+    pub docs: DocStore,
     /// Tools with an install in progress, so a double click starts one.
     pub installing: Mutex<HashSet<String>>,
 }
@@ -69,6 +74,7 @@ impl AppState {
         let state = Self {
             cache: ReleaseCache::new(&paths.release_cache),
             installer: Installer::new(&paths.tools),
+            docs: DocStore::new(&paths.doc_cache),
             catalog: RwLock::new(Catalog::default()),
             settings: RwLock::new(Settings::default()),
             installing: Mutex::new(HashSet::new()),

@@ -3,9 +3,15 @@
   import type { ToolDto } from "../bindings/ToolDto";
   import { catalog, toolState } from "../catalog.svelte";
   import { formatAgo, formatBytes, HOST_LABELS, SUPPORT_LABELS } from "../format";
+  import { openExternal } from "../api";
+  import Lightbox from "../Lightbox.svelte";
   import StatePill from "../StatePill.svelte";
+  import Readme from "./Readme.svelte";
 
   let { tool }: { tool: ToolDto } = $props();
+
+  let view = $state<"overview" | "readme">("overview");
+  let zoomed = $state<string | null>(null);
 
   const current = $derived(toolState(tool));
   const progress = $derived(catalog.progress[tool.id]);
@@ -37,6 +43,9 @@
   <header>
     <h1>{tool.name}</h1>
     <StatePill state={current} />
+    {#if tool.webUrl}
+      <button class="link repo" onclick={() => openExternal(tool.webUrl!)}>GitHub ↗</button>
+    {/if}
   </header>
   <p class="summary">{tool.summary}</p>
 
@@ -45,6 +54,15 @@
       <li>{item}</li>
     {/each}
   </ul>
+
+  <div class="views" role="tablist" aria-label="Araç görünümü">
+    <button role="tab" aria-selected={view === "overview"} onclick={() => (view = "overview")}>Genel bakış</button>
+    <button role="tab" aria-selected={view === "readme"} onclick={() => (view = "readme")}>README</button>
+  </div>
+
+  {#if view === "readme"}
+    <Readme toolId={tool.id} revision={tool.docRevision} />
+  {:else}
 
   <dl class="facts">
     <dt>Tür</dt>
@@ -56,6 +74,18 @@
       <dd>{tool.origin === "user" ? "Kullanıcı kataloğundan" : "Repodaki catalog/ klasöründen (geliştirme)"}</dd>
     {/if}
   </dl>
+
+  {#if tool.screenshots.length > 0}
+    <ul class="gallery" aria-label="Ekran görüntüleri">
+      {#each tool.screenshots as src, i (src + i)}
+        <li>
+          <button aria-label="Ekran görüntüsü {i + 1}, büyütmek için tıkla" onclick={() => (zoomed = src)}>
+            <img {src} alt="Ekran görüntüsü {i + 1}" loading="lazy" />
+          </button>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 
   {#if tool.delivery.type === "release"}
     {@const d = tool.delivery}
@@ -179,12 +209,81 @@
       {/if}
     </section>
   {/if}
+  {/if}
 </article>
+
+{#if zoomed}
+  <Lightbox src={zoomed} alt={tool.name} onclose={() => (zoomed = null)} />
+{/if}
 
 <style>
   .tool {
-    max-width: 760px;
+    max-width: 880px;
     padding: 36px 48px 48px;
+  }
+
+  .views {
+    display: flex;
+    gap: 4px;
+    margin: 0 0 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .views button {
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--text-secondary);
+  }
+
+  .views button[aria-selected="true"] {
+    border-bottom-color: var(--accent);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  button.link {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+  }
+
+  .repo {
+    margin-left: auto;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery button {
+    display: block;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+    cursor: zoom-in;
+  }
+
+  .gallery img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
   }
 
   header {

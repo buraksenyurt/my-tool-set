@@ -8,6 +8,9 @@ license.workspace = true
 
 [dependencies]
 mts-core.workspace = true
+ammonia.workspace = true
+percent-encoding.workspace = true
+pulldown-cmark.workspace = true
 flate2.workspace = true
 futures-util.workspace = true
 hex.workspace = true

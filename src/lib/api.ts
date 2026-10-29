@@ -5,14 +5,16 @@
 // data, so UI work is possible without starting the desktop shell.
 
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type { AppError } from "./bindings/AppError";
 import type { AppInfoDto } from "./bindings/AppInfoDto";
 import type { CatalogDto } from "./bindings/CatalogDto";
 import type { ErrorKind } from "./bindings/ErrorKind";
 import type { InstallProgressDto } from "./bindings/InstallProgressDto";
 import type { InstalledDto } from "./bindings/InstalledDto";
+import type { ReadmeDto } from "./bindings/ReadmeDto";
 import type { UpdateCheckDto } from "./bindings/UpdateCheckDto";
-import { demoCatalog, demoCheckUpdates, demoInstall, demoUninstall } from "./demo";
+import { demoCatalog, demoCheckUpdates, demoInstall, demoReadme, demoUninstall } from "./demo";
 
 export const inTauri = (): boolean => "__TAURI_INTERNALS__" in window;
 
@@ -83,4 +85,20 @@ export async function installTool(
 export async function uninstallTool(id: string, version: string): Promise<void> {
   if (!inTauri()) return demoUninstall(id, version);
   return call<void>("uninstall_tool", { id, version });
+}
+
+/** The tool's README as sanitized HTML (pictures served by the shell). */
+export async function getReadme(id: string): Promise<ReadmeDto> {
+  if (!inTauri()) return demoReadme(id);
+  return call<ReadmeDto>("get_readme", { id });
+}
+
+/** Opens an http(s) or mailto link in the system browser. */
+export async function openExternal(url: string): Promise<void> {
+  if (!/^(https?:|mailto:)/i.test(url)) return;
+  if (!inTauri()) {
+    window.open(url, "_blank", "noopener");
+    return;
+  }
+  await openUrl(url);
 }

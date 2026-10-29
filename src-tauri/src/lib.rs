@@ -2,6 +2,7 @@
 //! The domain model lives in mts-core, disk and network access in mts-catalog.
 
 mod commands;
+mod docs;
 mod dto;
 mod error;
 mod state;
@@ -13,6 +14,13 @@ use state::{AppState, Paths};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .register_asynchronous_uri_scheme_protocol(docs::SCHEME, |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                responder.respond(docs::respond(app, request).await);
+            });
+        })
         .setup(|app| {
             let path = app.path();
             let paths = Paths::new(&path.app_local_data_dir()?, &path.app_config_dir()?);
@@ -35,6 +43,7 @@ pub fn run() {
             commands::check_updates,
             commands::install_tool,
             commands::uninstall_tool,
+            docs::get_readme,
         ])
         .run(tauri::generate_context!())
         .expect("error while running my-tool-set");

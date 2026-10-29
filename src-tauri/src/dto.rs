@@ -55,6 +55,13 @@ pub struct ToolDto {
     pub support: Support,
     pub params: Vec<RunParam>,
     pub delivery: DeliveryDto,
+    /// `mtsimg` URLs of the manifest's screenshots.
+    pub screenshots: Vec<String>,
+    /// The repository on GitHub, for release tools.
+    pub web_url: Option<String>,
+    /// Revision the README and screenshots are shown at (tag, `HEAD` or
+    /// `local`); `None` when a local tool's folder is not found.
+    pub doc_revision: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, TS)]
@@ -149,4 +156,18 @@ pub enum InstallProgressDto {
     },
     Verifying,
     Unpacking,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ReadmeDto {
+    /// Sanitized HTML; `None` when the README could not be read.
+    pub html: Option<String>,
+    pub revision: Option<String>,
+    /// The README on GitHub at that revision.
+    pub web_url: Option<String>,
+    /// Served from the cache because GitHub could not be reached.
+    pub stale: bool,
+    pub error: Option<String>,
 }

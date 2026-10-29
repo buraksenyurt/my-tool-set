@@ -10,4 +10,17 @@ export type ToolDto = { id: string, name: string, summary: string, category: str
 /**
  * What the manifest says about this OS.
  */
-support: Support, params: Array<RunParam>, delivery: DeliveryDto, };
+support: Support, params: Array<RunParam>, delivery: DeliveryDto, 
+/**
+ * `mtsimg` URLs of the manifest's screenshots.
+ */
+screenshots: Array<string>, 
+/**
+ * The repository on GitHub, for release tools.
+ */
+webUrl: string | null, 
+/**
+ * Revision the README and screenshots are shown at (tag, `HEAD` or
+ * `local`); `None` when a local tool's folder is not found.
+ */
+docRevision: string | null, };

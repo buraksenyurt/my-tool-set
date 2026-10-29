@@ -21,6 +21,8 @@ use crate::error::IoContext;
 pub struct ReleaseClient {
     http: reqwest::Client,
     base: String,
+    /// Where repository files are read from at a revision.
+    raw_base: String,
 }
 
 /// Bytes received so far and the expected total.
@@ -29,10 +31,13 @@ pub type ProgressFn<'a> = &'a (dyn Fn(u64, u64) + Send + Sync);
 impl ReleaseClient {
     /// A client for github.com.
     pub fn new(user_agent: &str) -> Result<Self, CatalogError> {
-        Self::with_base("https://github.com", user_agent)
+        let mut client = Self::with_base("https://github.com", user_agent)?;
+        client.raw_base = "https://raw.githubusercontent.com".into();
+        Ok(client)
     }
 
-    /// A client for another host with the same URL layout (tests use a local server).
+    /// A client for another host with the same URL layout (tests use a local
+    /// server). Repository files are read from `<base>/raw/...`.
     pub fn with_base(base: &str, user_agent: &str) -> Result<Self, CatalogError> {
         install_crypto_provider();
         let http = reqwest::Client::builder()
@@ -44,9 +49,11 @@ impl ReleaseClient {
                 url: base.into(),
                 message: e.to_string(),
             })?;
+        let base = base.trim_end_matches('/').to_string();
         Ok(Self {
             http,
-            base: base.trim_end_matches('/').to_string(),
+            raw_base: format!("{base}/raw"),
+            base,
         })
     }
 
@@ -56,6 +63,46 @@ impl ReleaseClient {
 
     pub fn asset_url(&self, repo: &str, tag: &str, asset: &str) -> String {
         format!("{}/{repo}/releases/download/{tag}/{asset}", self.base)
+    }
+
+    /// `<raw>/<repo>/<revision>/<path>`, each segment percent-encoded.
+    pub fn raw_url(&self, repo: &str, revision: &str, path: &str) -> String {
+        format!(
+            "{}/{repo}/{revision}/{}",
+            self.raw_base,
+            crate::markdown::encode_path(path)
+        )
+    }
+
+    /// A file from the repository at `revision`, at most `max` bytes.
+    pub async fn raw_file(
+        &self,
+        repo: &str,
+        revision: &str,
+        path: &str,
+        max: u64,
+    ) -> Result<Vec<u8>, CatalogError> {
+        let url = self.raw_url(repo, revision, path);
+        let response = self.get(&url).await?;
+        if response.content_length().is_some_and(|len| len > max) {
+            return Err(CatalogError::Http {
+                url,
+                message: format!("dosya {max} bayttan büyük"),
+            });
+        }
+        let mut stream = response.bytes_stream();
+        let mut out = Vec::new();
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk.map_err(|e| http_error(&url, e))?;
+            if (out.len() + chunk.len()) as u64 > max {
+                return Err(CatalogError::Http {
+                    url,
+                    message: format!("dosya {max} bayttan büyük"),
+                });
+            }
+            out.extend_from_slice(&chunk);
+        }
+        Ok(out)
     }
 
     /// The newest published release of `repo`.
