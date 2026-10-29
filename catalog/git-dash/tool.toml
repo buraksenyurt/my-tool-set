@@ -1,0 +1,39 @@
+schema = 0
+
+id       = "git-dash"
+name     = "GitDash"
+summary  = "Yerel bir git reposunun commit aktivitesini terminalde takvim ısı haritası olarak gösterir."
+category = "git"
+kind     = "cli"
+stack    = ["Zig 0.17"]
+tags     = ["git", "terminal"]
+
+[source]
+root   = "coding-vibes"
+path   = "GitDash"
+readme = "README.md"
+screenshots = ["runtime_00.png", "runtime_01.png"]
+
+[platforms]
+windows = "yes"
+linux   = "yes"                   # WSL'de geliştirildi
+macos   = "untested"
+
+[build]
+command = "zig build-exe src/main.zig -O ReleaseFast -femit-bin=zig-out/bin/GitDash"
+
+[run]
+host = "terminal"
+exe.windows = "zig-out/bin/GitDash.exe"
+exe.linux   = "zig-out/bin/GitDash"
+
+[[run.params]]
+name  = "repo"
+kind  = "folder"
+label = "Repo klasörü"
+
+[[run.params]]
+name    = "days"
+kind    = "number"
+label   = "Kaç gün geriye"
+default = 180

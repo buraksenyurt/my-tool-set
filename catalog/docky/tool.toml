@@ -1,0 +1,29 @@
+schema = 0
+
+id       = "docky"
+name     = "Docky"
+summary  = "Hazır geliştirme modellerinden docker-compose dosyası üreten .NET tool."
+category = "docker"
+kind     = "cli"
+stack    = ["C#", ".NET 9", "Spectre.Console"]
+tags     = ["docker", "compose", "üretici"]
+
+[source]
+root   = "coding-vibes"
+path   = "Docky"
+readme = "README.md"
+screenshots = ["runtime_00.png"]
+
+[platforms]
+windows = "yes"
+linux   = "untested"
+macos   = "untested"
+
+[build]
+command = "dotnet build src/DockyApp.csproj"
+
+[run]
+host = "terminal"
+dev  = "dotnet run --project src/DockyApp.csproj --"
+# Alt komutlar: generate | list-models | list-services
+args = ["list-models"]

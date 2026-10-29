@@ -1,0 +1,24 @@
+schema = 0
+
+id       = "java-atlas"
+name     = "java-atlas"
+summary  = "Java modül, paket ve kütüphane bağımlılıklarını ülke haritası gibi çizer."
+category = "java"
+kind     = "gui"
+stack    = ["Rust", "Tauri 2", "Svelte 5", "tree-sitter"]
+tags     = ["java", "bağımlılık", "görselleştirme", "eğitim"]
+
+[release]
+repo = "buraksenyurt/java-atlas"
+
+[source]                         # release tag'indeki repo içeriğine göre göreli
+readme = "README.md"
+screenshots = ["docs/images/faz7-ayrintilar.png"]
+
+[platforms]
+windows = "yes"
+linux   = "yes"
+macos   = "untested"
+
+[run]
+host = "external"

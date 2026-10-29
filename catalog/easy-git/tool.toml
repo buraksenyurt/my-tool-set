@@ -1,0 +1,24 @@
+schema = 0
+
+id       = "easy-git"
+name     = "easy-git"
+summary  = "Git dallarını metro haritası gibi gösteren salt okunur dashboard."
+category = "git"
+kind     = "gui"
+stack    = ["Rust", "Tauri 2", "Svelte 5", "gitoxide"]
+tags     = ["git", "görselleştirme", "eğitim"]
+
+[release]
+repo = "buraksenyurt/easy-git"
+
+[source]                         # release tag'indeki repo içeriğine göre göreli
+readme = "README.md"
+screenshots = ["docs/images/overview.png"]
+
+[platforms]
+windows = "yes"
+linux   = "untested"
+macos   = "untested"
+
+[run]
+host = "external"
