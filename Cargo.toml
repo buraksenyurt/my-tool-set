@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/mts-core", "crates/mts-catalog", "src-tauri"]
+members = ["crates/mts-core", "crates/mts-catalog", "crates/mts-runner", "src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
@@ -12,6 +12,8 @@ authors = ["Burak Selim Senyurt"]
 [workspace.dependencies]
 mts-core = { path = "crates/mts-core" }
 mts-catalog = { path = "crates/mts-catalog" }
+mts-runner = { path = "crates/mts-runner" }
+libc = "0.2"
 ammonia = "4"
 percent-encoding = "2"
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
@@ -26,7 +28,7 @@ semver = "1"
 sha2 = "0.11"
 tar = "0.4"
 tempfile = "3"
-tokio = { version = "1", features = ["fs", "io-util", "macros", "rt-multi-thread", "sync"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
 toml = "1"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 serde = { version = "1", features = ["derive"] }

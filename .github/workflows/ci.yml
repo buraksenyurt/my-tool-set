@@ -46,3 +46,21 @@ jobs:
       # ts-rs regenerates src/lib/bindings during the tests; committed types must match
       - name: TypeScript tipleri güncel mi?
         run: git diff --exit-code -- src/lib/bindings
+
+  # Windows-specific code (process groups, taskkill, cmd quoting, paths) is
+  # compiled and tested on a real Windows runner. The Tauri crate is left out
+  # here: the Linux job covers it and a full WebView2 build is slow.
+  windows:
+    name: Windows (çekirdek crate'ler)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo clippy -p mts-core -p mts-catalog -p mts-runner --all-targets --locked -- -D warnings
+      - run: cargo test -p mts-core -p mts-catalog -p mts-runner --locked

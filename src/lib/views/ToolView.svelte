@@ -6,11 +6,15 @@
   import { openExternal } from "../api";
   import Lightbox from "../Lightbox.svelte";
   import StatePill from "../StatePill.svelte";
+  import { runs } from "../runs.svelte";
+  import LogView from "./LogView.svelte";
   import Readme from "./Readme.svelte";
+  import RunControls from "./RunControls.svelte";
 
   let { tool }: { tool: ToolDto } = $props();
 
-  let view = $state<"overview" | "readme">("overview");
+  let view = $state<"overview" | "readme" | "logs">("overview");
+  const live = $derived(!!runs.active(tool.id, "tool") || !!runs.active(tool.id, "build"));
   let zoomed = $state<string | null>(null);
 
   const current = $derived(toolState(tool));
@@ -58,10 +62,15 @@
   <div class="views" role="tablist" aria-label="Araç görünümü">
     <button role="tab" aria-selected={view === "overview"} onclick={() => (view = "overview")}>Genel bakış</button>
     <button role="tab" aria-selected={view === "readme"} onclick={() => (view = "readme")}>README</button>
+    <button role="tab" aria-selected={view === "logs"} onclick={() => (view = "logs")}>
+      Loglar{#if live}<span class="live-dot" aria-label="çalışıyor"></span>{/if}
+    </button>
   </div>
 
   {#if view === "readme"}
     <Readme toolId={tool.id} revision={tool.docRevision} />
+  {:else if view === "logs"}
+    <LogView toolId={tool.id} />
   {:else}
 
   <dl class="facts">
@@ -74,6 +83,8 @@
       <dd>{tool.origin === "user" ? "Kullanıcı kataloğundan" : "Repodaki catalog/ klasöründen (geliştirme)"}</dd>
     {/if}
   </dl>
+
+  <RunControls {tool} onShowLogs={() => (view = "logs")} />
 
   {#if tool.screenshots.length > 0}
     <ul class="gallery" aria-label="Ekran görüntüleri">
@@ -238,6 +249,16 @@
     margin-bottom: -1px;
     background: none;
     color: var(--text-secondary);
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+    vertical-align: middle;
   }
 
   .views button[aria-selected="true"] {

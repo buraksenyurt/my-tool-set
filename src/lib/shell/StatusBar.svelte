@@ -2,6 +2,7 @@
   import type { AppInfoDto } from "../bindings/AppInfoDto";
   import { catalog } from "../catalog.svelte";
   import { platformLabel } from "../format";
+  import { runs } from "../runs.svelte";
 
   let { info }: { info: AppInfoDto | null } = $props();
 
@@ -10,6 +11,9 @@
       .map((id) => catalog.find(id)?.name ?? id)
       .join(", "),
   );
+  const name = (id: string) => catalog.find(id)?.name ?? id;
+  const runningTools = $derived(runs.running.filter((r) => r.kind === "tool").map((r) => name(r.toolId)));
+  const buildingTools = $derived(runs.running.filter((r) => r.kind === "build").map((r) => name(r.toolId)));
   const updates = $derived(
     catalog.tools.filter((t) => t.delivery.type === "release" && t.delivery.updateAvailable).length,
   );
@@ -21,6 +25,10 @@
       {installing} kuruluyor…
     {:else if catalog.checking}
       Güncellemeler denetleniyor…
+    {:else if buildingTools.length > 0}
+      {buildingTools.join(", ")} derleniyor…
+    {:else if runningTools.length > 0}
+      <span class="dot"></span>{runningTools.join(", ")} çalışıyor
     {:else if updates > 0}
       {updates} araç için güncelleme var
     {:else}
@@ -47,6 +55,15 @@
     background: var(--sidebar);
     color: var(--muted);
     font-size: 12px;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--ok);
   }
 
   .right {

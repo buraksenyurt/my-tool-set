@@ -2249,6 +2249,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mts-runner"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "thiserror 2.0.21",
+ "tokio",
+]
+
+[[package]]
 name = "muda"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2276,6 +2285,7 @@ dependencies = [
  "futures-util",
  "mts-catalog",
  "mts-core",
+ "mts-runner",
  "percent-encoding",
  "serde",
  "serde_json",
@@ -4220,6 +4230,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.61.2",

@@ -171,3 +171,72 @@ pub struct ReadmeDto {
     pub stale: bool,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RunDto {
+    #[ts(type = "number")]
+    pub id: u64,
+    pub tool_id: String,
+    pub kind: RunKindDto,
+    /// What was run, for display.
+    pub command: String,
+    pub cwd: String,
+    pub pid: Option<u32>,
+    /// Milliseconds since the Unix epoch.
+    #[ts(type = "number")]
+    pub started_at: u64,
+    #[ts(type = "number | null")]
+    pub ended_at: Option<u64>,
+    pub state: RunStateDto,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum RunKindDto {
+    Tool,
+    Build,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(tag = "status", rename_all = "camelCase")]
+#[ts(export)]
+pub enum RunStateDto {
+    Running,
+    /// `code` is `null` when the process was ended by a signal.
+    Exited {
+        code: Option<i32>,
+        stopped: bool,
+    },
+    Failed {
+        message: String,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct LogLineDto {
+    pub stream: StreamDto,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum StreamDto {
+    Stdout,
+    Stderr,
+}
+
+/// Payload of the `run-log` event.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RunLogEvent {
+    #[ts(type = "number")]
+    pub run_id: u64,
+    pub lines: Vec<LogLineDto>,
+}

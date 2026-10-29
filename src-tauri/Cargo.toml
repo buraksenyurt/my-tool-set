@@ -17,6 +17,7 @@ tauri-build = { version = "2.7", features = [] }
 [dependencies]
 mts-core.workspace = true
 mts-catalog.workspace = true
+mts-runner.workspace = true
 futures-util.workspace = true
 percent-encoding.workspace = true
 tauri = { version = "2.12", features = [] }

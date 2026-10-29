@@ -1,6 +1,7 @@
 <script lang="ts">
   import { appInfo } from "./lib/api";
   import { catalog } from "./lib/catalog.svelte";
+  import { runs } from "./lib/runs.svelte";
   import type { AppInfoDto } from "./lib/bindings/AppInfoDto";
   import Sidebar from "./lib/shell/Sidebar.svelte";
   import StatusBar from "./lib/shell/StatusBar.svelte";
@@ -17,6 +18,7 @@
       .catch((e: Error) => (infoError = e.message));
     // Show what is cached right away, then ask GitHub for anything newer.
     catalog.load().then(() => catalog.checkUpdates());
+    runs.init();
   });
 
   function onKeydown(e: KeyboardEvent) {

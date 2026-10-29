@@ -1,9 +1,9 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.6 — 29 Ekim 2026
+> **Doküman sürümü:** v0.7 — 29 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
-> **Durum:** Faz 0–2 tamamlandı — sıradaki: Faz 3 (başlat ve izle)
+> **Durum:** Faz 0–3 tamamlandı — sıradaki: Faz 4 (gömülü terminal, MVP'nin son fazı)
 
 ---
 
@@ -91,7 +91,7 @@ my-tool-set/
 ├─ crates/
 │  ├─ mts-core/             domain: Tool, Catalog, HostMode, Platform, doğrulama (altyapıdan habersiz)  ✅ Faz 0
 │  ├─ mts-catalog/          manifest okuma, kök çözümleme, release.json okuma, indirme + SHA256 doğrulama  ✅ Faz 1
-│  └─ mts-runner/           süreç başlatma/izleme, pty oturumları  (Faz 3)
+│  └─ mts-runner/           süreç başlatma/izleme/durdurma  ✅ Faz 3 (pty oturumları Faz 4)
 ├─ src-tauri/               Tauri kabuğu: komutlar, state, plugin kayıtları
 ├─ src/                     Svelte 5 ön yüz
 │  ├─ shell/                kenar çubuğu, sekme çubuğu, çalışma alanı, durum çubuğu
@@ -170,10 +170,15 @@ MDI hissi sekmelerle başlar; Faz 7'de çalışma alanı yatay/dikey bölünebil
 - **Arayüz:** araç sekmesi "Genel bakış" ve "README" alt sekmelerine ayrıldı; manifestteki `screenshots` galerisi; görsel büyütme penceresi (Esc / tıkla kapat, odak geri döner); başlıkta "GitHub ↗"; hata durumunda "Tekrar dene".
 - **Doğrulama:** toplam 86 test (URL yeniden yazma, temizleme, slug, önbellek, çevrimdışı yedek, boyut sınırı, klasör dışına çıkma, sembolik link). Linux'ta release derlemesi (CSP açık) gerçek GitHub'dan easy-git README'sini v0.1.0'dan ve 10 görseli `mtsimg` üzerinden gösterdi; ağ kesilince önbellekten açıldı, önbellekte olmayan java-atlas anlaşılır bir hata verdi.
 
-### Faz 3 — Süreç yönetimi (`external`)
-- Başlat/durdur, PID ve çıktı kodu, stdout/stderr'in channel ile akması, log paneli.
-- Kurulu değilse "önce kur" akışı; `[source]` araçlarında "ikili yok → build et".
-- `release.json`'da platformu olmayan aracın (ör. DockerCity Linux'ta) devre dışı gösterilmesi.
+### Faz 3 — Başlat ve izle (`external`) ✅
+- **mts-runner (yeni crate, Tauri'den bağımsız):** iki tür çalışma: *araç* (kullanıcının açtığı GUI uygulaması) ve *derleme* (yerel aracın `[build] command`'i). Araç başına aynı türden tek çalışma. stdout/stderr satır satır toplanır (ANSI kodları ve `\r` ilerleme çubukları temizlenir), çalışma başına son 5000 satır; ~50 ms'lik paketler halinde arayüze iletilir. Başlatılamayan program hata değil, "başarısız" bir çalışma olur (neden arayüzde görünür). Son 30 biten çalışma tutulur.
+- **Durdurma:** önce nazik (Windows'ta `taskkill /T` → pencerelere kapan mesajı; Linux/macOS'ta süreç grubuna SIGTERM), 4 sn içinde kapanmazsa zorla (`taskkill /T /F`; SIGKILL). Her zaman süreç ağacının tamamı: `npm` durunca altındaki `cargo` da durur. Çocuklar kendi süreç grubunda başlar (kabuğun konsolundaki Ctrl+C onlara ulaşmaz); derlemeler Windows'ta konsol penceresi açmaz.
+- **Kabuk kapanınca:** açık GUI araçlar açık kalır (kullanıcının uygulamaları), yarım kalan derlemeler durdurulur.
+- **Kabuk:** `start_tool` (release: kurulu sürümün `entry`'si; yerel: hazır exe ya da `run.dev`), `build_tool`, `stop_run`, `list_runs`, `run_log`; olaylar `run-changed` ve `run-log`. Süreç başlatan komutlar asenkron (Tauri senkron komutları Tokio dışında, ana iş parçacığında çalıştırıyor).
+- **Arayüz:** araç sekmesinde Başlat / Durdur / Derle / Yeniden derle, canlı süre ve PID; "Loglar" alt sekmesi (çalışma seçici, stderr kırmızı, otomatik kaydırma, "En alta git", kopyala); kenar çubuğunda çalışan araçta yeşil nokta, derlemede dönen gösterge; durum çubuğunda çalışan/derlenen araçlar. Derleme bitince katalog yenilenir, araç "hazır"a geçer.
+- **Windows CI:** my-tool-set'e gerçek Windows'ta çekirdek crate'leri (`mts-core`, `mts-catalog`, `mts-runner`) clippy + test eden bir job eklendi; `cmd` ile çıktı yakalama ve `taskkill` ile ağaç durdurma testleri orada çalışır.
+- **Doğrulama:** Linux'ta süreç ağacının tamamen kapandığı, SIGTERM'i yok sayan sürecin bekleme süresi sonunda öldürüldüğü testler. Release derlemesinde kullanıcı kataloğuna eklenen bir yerel araç derlendi → "hazır"a geçti → başlatıldı → canlı log aktı → durduruldu (süreç ve çocukları gitti). Gerçek easy-git GitHub'dan kurulup kabuktan açıldı, kabuktan kapatıldı; kabuk kapandıktan sonra açık easy-git çalışmaya devam etti.
+- **Bekleyen:** terminal araçları (GitDash, Docky) Faz 4'te. Logların diske yazılması gerekirse sonraya.
 
 ### Faz 4 — Gömülü terminal (`terminal`)
 - `portable-pty` + xterm.js, yeniden boyutlandırma, çoklu terminal sekmesi.

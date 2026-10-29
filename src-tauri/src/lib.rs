@@ -5,6 +5,7 @@ mod commands;
 mod docs;
 mod dto;
 mod error;
+mod runs;
 mod state;
 
 use tauri::Manager;
@@ -33,7 +34,11 @@ pub fn run() {
             let base = std::env::var("MTS_RELEASE_BASE")
                 .ok()
                 .filter(|_| cfg!(debug_assertions));
-            app.manage(AppState::new(paths, &user_agent, base.as_deref())?);
+            let state = AppState::new(paths, &user_agent, base.as_deref())?;
+            state.set_runner(mts_runner::Runner::new(runs::TauriSink(
+                app.handle().clone(),
+            )));
+            app.manage(state);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -44,7 +49,19 @@ pub fn run() {
             commands::install_tool,
             commands::uninstall_tool,
             docs::get_readme,
+            runs::start_tool,
+            runs::build_tool,
+            runs::stop_run,
+            runs::list_runs,
+            runs::run_log,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running my-tool-set");
+        .build(tauri::generate_context!())
+        .expect("error while building my-tool-set")
+        .run(|app, event| {
+            // Builds are the shell's business and end with it; tools the user
+            // opened keep running.
+            if let tauri::RunEvent::Exit = event {
+                app.state::<AppState>().runner().stop_builds();
+            }
+        });
 }

@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, RwLock};
+use std::sync::{Mutex, OnceLock, RwLock};
 
 use mts_catalog::cache::ReleaseCache;
 use mts_catalog::catalog::{self, Catalog, Origin};
@@ -10,6 +10,7 @@ use mts_catalog::docs::DocStore;
 use mts_catalog::install::Installer;
 use mts_catalog::releases::ReleaseClient;
 use mts_catalog::settings::Settings;
+use mts_runner::Runner;
 
 include!(concat!(env!("OUT_DIR"), "/embedded_catalog.rs"));
 
@@ -59,6 +60,8 @@ pub struct AppState {
     pub docs: DocStore,
     /// Tools with an install in progress, so a double click starts one.
     pub installing: Mutex<HashSet<String>>,
+    /// Set once the app handle exists (it forwards run events to the webview).
+    runner: OnceLock<Runner>,
 }
 
 impl AppState {
@@ -78,12 +81,21 @@ impl AppState {
             catalog: RwLock::new(Catalog::default()),
             settings: RwLock::new(Settings::default()),
             installing: Mutex::new(HashSet::new()),
+            runner: OnceLock::new(),
             client,
             paths,
         };
         state.ensure_settings_file();
         state.reload();
         Ok(state)
+    }
+
+    pub fn set_runner(&self, runner: Runner) {
+        let _ = self.runner.set(runner);
+    }
+
+    pub fn runner(&self) -> &Runner {
+        self.runner.get().expect("runner is set during setup")
     }
 
     fn ensure_settings_file(&self) {

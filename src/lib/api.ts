@@ -5,6 +5,7 @@
 // data, so UI work is possible without starting the desktop shell.
 
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { AppError } from "./bindings/AppError";
 import type { AppInfoDto } from "./bindings/AppInfoDto";
@@ -12,9 +13,19 @@ import type { CatalogDto } from "./bindings/CatalogDto";
 import type { ErrorKind } from "./bindings/ErrorKind";
 import type { InstallProgressDto } from "./bindings/InstallProgressDto";
 import type { InstalledDto } from "./bindings/InstalledDto";
+import type { LogLineDto } from "./bindings/LogLineDto";
 import type { ReadmeDto } from "./bindings/ReadmeDto";
+import type { RunDto } from "./bindings/RunDto";
+import type { RunLogEvent } from "./bindings/RunLogEvent";
 import type { UpdateCheckDto } from "./bindings/UpdateCheckDto";
-import { demoCatalog, demoCheckUpdates, demoInstall, demoReadme, demoUninstall } from "./demo";
+import {
+  demoCatalog,
+  demoCheckUpdates,
+  demoInstall,
+  demoReadme,
+  demoRuns,
+  demoUninstall,
+} from "./demo";
 
 export const inTauri = (): boolean => "__TAURI_INTERNALS__" in window;
 
@@ -101,4 +112,47 @@ export async function openExternal(url: string): Promise<void> {
     return;
   }
   await openUrl(url);
+}
+
+// --- Runs (tools and builds) ---------------------------------------------
+
+/** Opens a tool in its own window. */
+export async function startTool(id: string): Promise<RunDto> {
+  if (!inTauri()) return demoRuns.start(id, "tool");
+  return call<RunDto>("start_tool", { id });
+}
+
+/** Runs a local tool's build command. */
+export async function buildTool(id: string): Promise<RunDto> {
+  if (!inTauri()) return demoRuns.start(id, "build");
+  return call<RunDto>("build_tool", { id });
+}
+
+export async function stopRun(runId: number): Promise<void> {
+  if (!inTauri()) return demoRuns.stop(runId);
+  return call<void>("stop_run", { runId });
+}
+
+export async function listRuns(): Promise<RunDto[]> {
+  if (!inTauri()) return demoRuns.list();
+  return call<RunDto[]>("list_runs");
+}
+
+export async function runLog(runId: number): Promise<LogLineDto[]> {
+  if (!inTauri()) return demoRuns.log(runId);
+  return call<LogLineDto[]>("run_log", { runId });
+}
+
+/** Subscribes to run events; returns the unsubscribe function. */
+export async function onRunEvents(handlers: {
+  changed: (run: RunDto) => void;
+  log: (event: RunLogEvent) => void;
+}): Promise<() => void> {
+  if (!inTauri()) return demoRuns.subscribe(handlers);
+  const offChanged = await listen<RunDto>("run-changed", (e) => handlers.changed(e.payload));
+  const offLog = await listen<RunLogEvent>("run-log", (e) => handlers.log(e.payload));
+  return () => {
+    offChanged();
+    offLog();
+  };
 }

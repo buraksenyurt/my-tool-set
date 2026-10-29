@@ -1,6 +1,7 @@
 <script lang="ts">
   import { catalog, toolState } from "../catalog.svelte";
   import type { ToolDto } from "../bindings/ToolDto";
+  import { runs } from "../runs.svelte";
   import StatePill from "../StatePill.svelte";
   import { openAbout, openIssues, openTool, tabs } from "../tabs.svelte";
   import { theme } from "../theme.svelte";
@@ -123,8 +124,10 @@
               aria-current={tool.id === activeToolId ? "page" : undefined}
               onclick={() => openTool(tool.id, tool.name)}
             >
-              <span class="name">{tool.name}</span>
-              {#if catalog.progress[tool.id]}
+              <span class="name">
+                {#if runs.active(tool.id, "tool")}<span class="run-dot" title="Çalışıyor"></span>{/if}{tool.name}
+              </span>
+              {#if catalog.progress[tool.id] || runs.active(tool.id, "build")}
                 <span class="busy" aria-label="Kuruluyor"></span>
               {:else}
                 <StatePill state={toolState(tool)} version={installedVersion(tool)} />
@@ -244,6 +247,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .run-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--ok);
+    vertical-align: 1px;
   }
 
   .busy {

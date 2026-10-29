@@ -4,6 +4,9 @@
 import type { CatalogDto } from "./bindings/CatalogDto";
 import type { InstallProgressDto } from "./bindings/InstallProgressDto";
 import type { InstalledDto } from "./bindings/InstalledDto";
+import type { LogLineDto } from "./bindings/LogLineDto";
+import type { RunDto } from "./bindings/RunDto";
+import type { RunLogEvent } from "./bindings/RunLogEvent";
 import type { ReadmeDto } from "./bindings/ReadmeDto";
 import type { ToolDto } from "./bindings/ToolDto";
 import type { UpdateCheckDto } from "./bindings/UpdateCheckDto";
@@ -220,3 +223,89 @@ export async function demoUninstall(id: string, version: string): Promise<void> 
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// --- Runs: a fake process that prints a few lines and stays up until stopped
+// (tools) or finishes by itself (builds).
+
+type RunHandlers = { changed: (r: RunDto) => void; log: (e: RunLogEvent) => void };
+
+class DemoRuns {
+  private runs: RunDto[] = [];
+  private logs = new Map<number, LogLineDto[]>();
+  private handlers = new Set<RunHandlers>();
+  private nextId = 1;
+
+  subscribe(h: RunHandlers): () => void {
+    this.handlers.add(h);
+    return () => this.handlers.delete(h);
+  }
+
+  async list(): Promise<RunDto[]> {
+    return structuredClone(this.runs).reverse();
+  }
+
+  async log(id: number): Promise<LogLineDto[]> {
+    return structuredClone(this.logs.get(id) ?? []);
+  }
+
+  async start(toolId: string, kind: "tool" | "build"): Promise<RunDto> {
+    if (this.runs.some((r) => r.toolId === toolId && r.kind === kind && r.state.status === "running")) {
+      throw new Error(`${toolId} zaten çalışıyor`);
+    }
+    const run: RunDto = {
+      id: this.nextId++,
+      toolId,
+      kind,
+      command: kind === "build" ? "zig build-exe src/main.zig -O ReleaseFast" : `(demo)/tools/${toolId}/${toolId}`,
+      cwd: `(demo)/${toolId}`,
+      pid: 4000 + this.nextId,
+      startedAt: Date.now(),
+      endedAt: null,
+      state: { status: "running" },
+    };
+    this.runs.push(run);
+    this.logs.set(run.id, []);
+    this.emitChanged(run);
+    const lines: LogLineDto[] =
+      kind === "build"
+        ? [
+            { stream: "stdout", text: "info: derleme başladı" },
+            { stream: "stderr", text: "warning: unused variable `x`" },
+            { stream: "stdout", text: "info: tamamlandı (3,2 sn)" },
+          ]
+        : [
+            { stream: "stdout", text: `${toolId} 0.1.0 başlatıldı` },
+            { stream: "stderr", text: "[INFO] webview hazır" },
+          ];
+    lines.forEach((line, i) =>
+      setTimeout(() => this.append(run.id, [line]), 300 * (i + 1)),
+    );
+    if (kind === "build") setTimeout(() => this.finish(run.id, 0, false), 300 * (lines.length + 1));
+    return structuredClone(run);
+  }
+
+  async stop(id: number): Promise<void> {
+    setTimeout(() => this.finish(id, null, true), 400);
+  }
+
+  private append(id: number, lines: LogLineDto[]) {
+    const run = this.runs.find((r) => r.id === id);
+    if (!run || run.state.status !== "running") return;
+    this.logs.get(id)?.push(...lines);
+    for (const h of this.handlers) h.log({ runId: id, lines: structuredClone(lines) });
+  }
+
+  private finish(id: number, code: number | null, stopped: boolean) {
+    const run = this.runs.find((r) => r.id === id);
+    if (!run || run.state.status !== "running") return;
+    run.state = { status: "exited", code, stopped };
+    run.endedAt = Date.now();
+    this.emitChanged(run);
+  }
+
+  private emitChanged(run: RunDto) {
+    for (const h of this.handlers) h.changed(structuredClone(run));
+  }
+}
+
+export const demoRuns = new DemoRuns();
