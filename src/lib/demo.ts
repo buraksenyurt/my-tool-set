@@ -98,14 +98,18 @@ const tools: BaseTool[] = [
       { name: "days", kind: "number", label: "Kaç gün geriye", default: 180 },
     ],
     delivery: {
-      type: "local",
-      status: {
-        kind: "ready",
-        folder: "C:\\Users\\burak\\Development\\coding-vibes\\GitDash",
-        exe: "C:\\Users\\burak\\Development\\coding-vibes\\GitDash\\zig-out\\bin\\GitDash.exe",
-      },
-      buildCommand: "zig build-exe src/main.zig -O ReleaseFast -femit-bin=zig-out/bin/GitDash",
-      devCommand: null,
+      type: "release",
+      repo: "buraksenyurt/git-dash",
+      installed: [
+        {
+          version: "0.1.0",
+          folder: "C:\\Users\\burak\\AppData\\Local\\dev.buraksenyurt.mytoolset\\tools\\git-dash\\0.1.0",
+          entry: "C:\\Users\\burak\\AppData\\Local\\dev.buraksenyurt.mytoolset\\tools\\git-dash\\0.1.0\\git-dash-0.1.0-windows-x64.exe",
+          installedAt: now() - 3600,
+        },
+      ],
+      latest: { version: "0.1.0", tag: "v0.1.0", fetchedAt: now(), hasBuild: true, assetSize: 927_744 },
+      updateAvailable: false,
     },
   },
   {

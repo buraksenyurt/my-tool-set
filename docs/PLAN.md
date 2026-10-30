@@ -1,7 +1,7 @@
 # my-tool-set — Proje Plan Dokümanı
 
 > **Atölye:** Fikirler Atölyesi
-> **Doküman sürümü:** v0.8 — 29 Ekim 2026
+> **Doküman sürümü:** v0.9 — 30 Ekim 2026
 > **Kod:** `my-tool-set` (araçlar kendi repolarında, kabuk onları GitHub Releases'tan alır)
 > **Durum:** MVP tamamlandı (Faz 0–4) — sıradaki: MVP sonrası değerlendirme (modüller, çalışma alanı, paketleme)
 
@@ -33,7 +33,7 @@ Bu projede öğreti dokümanı yazılmıyor; doğrudan fazlar halinde kodlanıyo
 | easy-git | GUI | Rust · Tauri 2 · Svelte 5 | Windows (diğerleri denenmedi) | ✅ dış süreç → modül · [kendi reposu](https://github.com/buraksenyurt/easy-git) |
 | java-atlas | GUI | Rust · Tauri 2 · Svelte 5 | Windows · Linux · macOS | ✅ dış süreç → modül · [kendi reposu](https://github.com/buraksenyurt/java-atlas) |
 | DockerCity | GUI | C# · WinUI 3 | Yalnızca Windows | ✅ dış süreç · [kendi reposu](https://github.com/buraksenyurt/docker-city) |
-| GitDash | CLI | Zig | Windows · Linux (WSL) | ✅ gömülü terminal · `coding-vibes`'ta |
+| GitDash | CLI | Zig | Windows · Linux · macOS | ✅ gömülü terminal · [kendi reposu](https://github.com/buraksenyurt/git-dash) |
 | Docky | CLI | C# · .NET tool | Windows | ✅ gömülü terminal · `coding-vibes`'ta |
 | MissionControl, LunarRace, Walkure | Oyun | Rust/Bevy · Python · Go | — | ⏸ sonraya ("Eğlence" kategorisi) |
 | DoDi, Friendly | Web | ASP.NET · EF · Docker | — | ⏸ sonraya (compose ile ayağa kalkan servis türü) |
@@ -70,16 +70,17 @@ Olgunlaşan araçlar ayrı repolarda (Ekim 2026'da `coding-vibes`'tan geçmişle
 
 - `ci.yml` — `main`'e push ve PR'larda kontrol + testler.
 - `release.yml` — `v*.*.*` tag'i push'lanınca: tag ile proje sürümünü karşılaştırır → taslak release açar → platform matrisinde derler ve dosyaları yükler → `release.json`'u (dosya, SHA256, boyut, çalıştırılacak giriş) üretip yükler → yayınlar. Bir platform düşerse release taslak kalır.
-- `scripts/release/` — `check-version.sh`, `fragment.sh`, `compose-manifest.sh` (üç repoda aynı).
+- `scripts/release/` — `check-version.sh`, `fragment.sh`, `compose-manifest.sh` (tüm araç repolarında aynı).
 
 | Araç | Platformlar | Taşınabilir paket | Yükleyiciler |
 |---|---|---|---|
 | easy-git, java-atlas | windows-x64 · linux-x64 · macos-arm64 | `.zip` (exe) · `.AppImage` · `.app.tar.gz` | nsis, msi · deb · dmg |
 | DockerCity | windows-x64 · windows-arm64 | self-contained `.zip` | — |
+| GitDash | windows-x64 · windows-arm64 · linux-x64 · linux-arm64 · macos-x64 · macos-arm64 | tek dosya (Zig ile tek Linux runner'da çapraz derleme) | — |
 
 Kabuk yalnızca `release.json`'u ve `portable` dosyasını kullanır: indirir, SHA256'yı doğrular, `<veri-klasörü>/tools/<id>/<sürüm>/` altına açar. Şema: [catalog/README.md](../catalog/README.md). Repo ayarları: `v*` tag'leri ruleset ile korunuyor, release'ler değiştirilemez (immutable).
 
-GitDash ve Docky şimdilik `coding-vibes`'ta; yerel kök + yol ile çalışırlar. Olgunlaşınca aynı kalıpla kendi repolarına taşınırlar.
+GitDash 30 Ekim 2026'da kendi reposuna taşındı. Taşırken Windows'ta çalışmasını engelleyen iki şey düzeltildi: tarih hesabı GNU `date` yerine `git var GIT_COMMITTER_IDENT` ile yapılıyor, argümanlar `iterateAllocator` ile okunuyor; Windows konsolunda UTF-8 + ANSI açılıyor. Docky şimdilik `coding-vibes`'ta, yerel kök + yol ile çalışıyor; bakımdan (.NET 10, beta System.CommandLine'ı bırakma, tek dosya publish) sonra aynı kalıpla taşınacak.
 
 ## 6. Mimari
 
@@ -228,6 +229,6 @@ Yalnızca bu plan. Faz kararları ve öğrenilenler buraya işlenir; ayrı öğr
 | Sürüm hizası | MVP'de gerekmiyor; modül modu gelirse kabuk ve araçlar aynı Tauri/Svelte sürümlerinde olmalı. |
 | easy-git platformu | Release workflow'u platform başına `--bundles` veriyor; Linux derlemesi ve AppImage paketleme sorunsuz. Linux'ta çalışma zamanı henüz denenmedi. |
 | DockerCity | Release'te `PublishTrimmed=false` ile self-contained yayınlanıyor (EF Core/WinUI trimming'e uygun değil). ARM64 derlemesi x64 runner'da çapraz derleniyor; ilk tag'de doğrulanacak. |
-| GitDash | `build.zig` yok, `zig build-exe` ile derleniyor; Windows'ta ANSI renk desteği terminalde test edilecek. |
+| GitDash | Windows desteği yeni; CI'da Windows'ta test + kısa çalıştırma var, kabuğun gömülü terminalinde ilk release ile denenecek. macOS derleniyor ama denenmedi. |
 | Docky | `dotnet tool install` mı, `dotnet run` mı ile çağrılacak? İlk sürüm `dotnet run`. |
 | Güvenlik | Manifestler komut çalıştırıyor; yalnızca yerel `catalog/` klasörü okunur, Tauri capability'leri dar tutulur. |

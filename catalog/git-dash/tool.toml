@@ -8,24 +8,20 @@ kind     = "cli"
 stack    = ["Zig 0.17"]
 tags     = ["git", "terminal"]
 
-[source]
-root   = "coding-vibes"
-path   = "GitDash"
+[release]
+repo = "buraksenyurt/git-dash"
+
+[source]                         # release tag'indeki repo içeriğine göre göreli
 readme = "README.md"
 screenshots = ["runtime_00.png", "runtime_01.png"]
 
 [platforms]
 windows = "yes"
-linux   = "yes"                   # WSL'de geliştirildi
+linux   = "yes"
 macos   = "untested"
-
-[build]
-command = "zig build-exe src/main.zig -O ReleaseFast -femit-bin=zig-out/bin/GitDash"
 
 [run]
 host = "terminal"
-exe.windows = "zig-out/bin/GitDash.exe"
-exe.linux   = "zig-out/bin/GitDash"
 
 [[run.params]]
 name  = "repo"

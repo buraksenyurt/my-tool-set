@@ -20,7 +20,7 @@ Uçtan uca yapay zeka araçları desteğinde, fazlar halinde geliştirilmektedir
 | easy-git | GUI | Rust · Tauri 2 · Svelte 5 | [buraksenyurt/easy-git](https://github.com/buraksenyurt/easy-git) releases | Dış süreç |
 | java-atlas | GUI | Rust · Tauri 2 · Svelte 5 | [buraksenyurt/java-atlas](https://github.com/buraksenyurt/java-atlas) releases | Dış süreç |
 | DockerCity | GUI | C# · WinUI 3 (yalnızca Windows) | [buraksenyurt/docker-city](https://github.com/buraksenyurt/docker-city) releases | Dış süreç |
-| GitDash | CLI | Zig | `coding-vibes` (yerel) | Gömülü terminal |
+| GitDash | CLI | Zig | [buraksenyurt/git-dash](https://github.com/buraksenyurt/git-dash) releases | Gömülü terminal |
 | Docky | CLI | C# · .NET tool | `coding-vibes` (yerel) | Gömülü terminal |
 
 ## Yığın

@@ -4,8 +4,8 @@ Kabuğun gösterdiği her araç bu klasörde kendi alt klasöründe bir `tool.to
 
 Araçlar iki yoldan gelir:
 
-- **`[release]`** — aracın kendi GitHub reposundaki release'ler. easy-git, java-atlas ve DockerCity böyle.
-- **`[source]` + kök** — henüz release'i olmayan, diskteki bir klasörden çalışan araçlar. GitDash ve Docky şimdilik böyle.
+- **`[release]`** — aracın kendi GitHub reposundaki release'ler. easy-git, java-atlas, DockerCity ve GitDash böyle.
+- **`[source]` + kök** — henüz release'i olmayan, diskteki bir klasörden çalışan araçlar. Docky şimdilik böyle.
 
 ## Release'ler ve `release.json`
 
@@ -91,7 +91,7 @@ repo = "buraksenyurt/easy-git"
 
 [source]                         # ... ya da kök + yol (release yoksa)
 root   = "coding-vibes"          # settings.toml [roots] içindeki ad
-path   = "GitDash"               # köke göre göreli klasör
+path   = "Docky"                 # köke göre göreli klasör
 readme = "README.md"             # klasöre (ya da release tag'ine) göre göreli
 screenshots = ["docs/images/overview.png"]
 
