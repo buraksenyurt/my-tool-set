@@ -56,6 +56,31 @@ pub enum PtyError {
     Io(String),
 }
 
+/// The cursor position query (DSR) and the answer we give to it.
+const CURSOR_QUERY: &[u8] = b"\x1b[6n";
+const CURSOR_AT_TOP_LEFT: &[u8] = b"\x1b[1;1R";
+
+/// ConPTY's start-up handshake. portable-pty creates the pseudo console with
+/// `PSEUDOCONSOLE_INHERIT_CURSOR`, so conhost first asks the terminal where
+/// the cursor is (`ESC[6n`) and does not start the program until it gets an
+/// answer. The answer cannot wait for the webview: the session id reaches the
+/// UI only after this, so the UI would drop it and the tab would hang. The
+/// first chunk is checked here: the query is answered ("top left", which is
+/// where a fresh tab's cursor is) and removed, so xterm.js does not answer it
+/// a second time. Later queries from the program itself are left to xterm.js.
+fn take_startup_cursor_query(chunk: &mut Vec<u8>) -> bool {
+    match chunk
+        .windows(CURSOR_QUERY.len())
+        .position(|w| w == CURSOR_QUERY)
+    {
+        Some(at) => {
+            chunk.drain(at..at + CURSOR_QUERY.len());
+            true
+        }
+        None => false,
+    }
+}
+
 /// How long to wait for the last output after the program has exited.
 /// Normally it is there at once; a background process the program left
 /// behind may keep the pipe open, and must not hold the exit event forever.
@@ -153,13 +178,25 @@ impl PtyManager {
 
         // Reader: forwards output until the pipe closes.
         let (drained_tx, drained_rx) = mpsc::channel::<()>();
+        let responder = self.clone();
         std::thread::Builder::new()
             .name(format!("pty-{id}-read"))
             .spawn(move || {
                 let mut buf = [0u8; 16 * 1024];
+                let mut handshake_pending = cfg!(windows);
                 loop {
                     match reader.read(&mut buf) {
                         Ok(0) | Err(_) => break,
+                        Ok(n) if handshake_pending => {
+                            handshake_pending = false;
+                            let mut chunk = buf[..n].to_vec();
+                            if take_startup_cursor_query(&mut chunk) {
+                                let _ = responder.write(id, CURSOR_AT_TOP_LEFT);
+                            }
+                            if !chunk.is_empty() {
+                                on_data(&chunk);
+                            }
+                        }
                         Ok(n) => on_data(&buf[..n]),
                     }
                 }
@@ -503,6 +540,21 @@ mod tests {
             String::from_utf8_lossy(&out.lock().unwrap())
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn startup_cursor_query_is_taken_out_once() {
+        let mut chunk = b"\x1b[?9001h\x1b[6n\x1b[?1004h".to_vec();
+        assert!(take_startup_cursor_query(&mut chunk));
+        assert_eq!(chunk, b"\x1b[?9001h\x1b[?1004h");
+
+        let mut only = CURSOR_QUERY.to_vec();
+        assert!(take_startup_cursor_query(&mut only));
+        assert!(only.is_empty());
+
+        let mut plain = b"merhaba".to_vec();
+        assert!(!take_startup_cursor_query(&mut plain));
+        assert_eq!(plain, b"merhaba");
     }
 
     #[test]
