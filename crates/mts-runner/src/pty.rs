@@ -14,7 +14,10 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use portable_pty::{Child, CommandBuilder, MasterPty, PtySize, native_pty_system};
+use std::sync::mpsc;
+use std::time::Duration;
+
+use portable_pty::{ChildKiller, CommandBuilder, MasterPty, PtySize, native_pty_system};
 
 pub type SessionId = u64;
 
@@ -53,10 +56,18 @@ pub enum PtyError {
     Io(String),
 }
 
+/// How long to wait for the last output after the program has exited.
+/// Normally it is there at once; a background process the program left
+/// behind may keep the pipe open, and must not hold the exit event forever.
+const DRAIN: Duration = Duration::from_secs(3);
+
 struct Session {
     writer: Box<dyn Write + Send>,
+    /// Dropping it closes the pseudo console. On Windows that is what ends
+    /// the output pipe: ConPTY keeps it open after the program exits.
     master: Box<dyn MasterPty + Send>,
-    child: Box<dyn Child + Send + Sync>,
+    /// The waiter thread owns the child; stopping goes through this.
+    killer: Box<dyn ChildKiller + Send + Sync>,
 }
 
 #[derive(Clone, Default)]
@@ -107,12 +118,12 @@ impl PtyManager {
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
 
-        let child = pair
+        let mut child = pair
             .slave
             .spawn_command(cmd)
             .map_err(|e| PtyError::Spawn(e.to_string()))?;
         // The child owns the slave end now; dropping ours lets EOF reach the
-        // reader when the program exits.
+        // reader on Unix when the program exits.
         drop(pair.slave);
 
         let mut reader = pair
@@ -123,6 +134,7 @@ impl PtyManager {
             .master
             .take_writer()
             .map_err(|e| PtyError::Open(e.to_string()))?;
+        let killer = child.clone_killer();
 
         let id = {
             let mut inner = self.inner.lock().unwrap();
@@ -133,15 +145,16 @@ impl PtyManager {
                 Session {
                     writer,
                     master: pair.master,
-                    child,
+                    killer,
                 },
             );
             id
         };
 
-        let manager = self.clone();
+        // Reader: forwards output until the pipe closes.
+        let (drained_tx, drained_rx) = mpsc::channel::<()>();
         std::thread::Builder::new()
-            .name(format!("pty-{id}"))
+            .name(format!("pty-{id}-read"))
             .spawn(move || {
                 let mut buf = [0u8; 16 * 1024];
                 loop {
@@ -150,7 +163,23 @@ impl PtyManager {
                         Ok(n) => on_data(&buf[..n]),
                     }
                 }
-                on_exit(id, manager.reap(id));
+                let _ = drained_tx.send(());
+            })
+            .map_err(|e| PtyError::Io(e.to_string()))?;
+
+        // Waiter: the exit is taken from the process, not from EOF, because
+        // on Windows EOF only comes after the pseudo console is closed.
+        let manager = self.clone();
+        std::thread::Builder::new()
+            .name(format!("pty-{id}-wait"))
+            .spawn(move || {
+                let code = child.wait().ok().map(|s| s.exit_code());
+                // Close the terminal (drop master + writer) so the pipe ends,
+                // then let the reader hand over the last bytes.
+                let session = manager.inner.lock().unwrap().sessions.remove(&id);
+                drop(session);
+                let _ = drained_rx.recv_timeout(DRAIN);
+                on_exit(id, code);
             })
             .map_err(|e| PtyError::Io(e.to_string()))?;
 
@@ -181,7 +210,7 @@ impl PtyManager {
         let mut inner = self.inner.lock().unwrap();
         let session = inner.sessions.get_mut(&id).ok_or(PtyError::Unknown(id))?;
         session
-            .child
+            .killer
             .kill()
             .map_err(|e| PtyError::Io(e.to_string()))
     }
@@ -189,19 +218,12 @@ impl PtyManager {
     pub fn close_all(&self) {
         let mut inner = self.inner.lock().unwrap();
         for session in inner.sessions.values_mut() {
-            let _ = session.child.kill();
+            let _ = session.killer.kill();
         }
     }
 
     pub fn is_open(&self, id: SessionId) -> bool {
         self.inner.lock().unwrap().sessions.contains_key(&id)
-    }
-
-    /// Removes the session and waits for its exit code.
-    fn reap(&self, id: SessionId) -> Option<u32> {
-        let session = self.inner.lock().unwrap().sessions.remove(&id)?;
-        let mut child = session.child;
-        child.wait().ok().map(|s| s.exit_code())
     }
 }
 
@@ -403,6 +425,30 @@ mod tests {
             .unwrap();
         rx.recv_timeout(Duration::from_secs(10)).unwrap();
         assert!(wait_for(&out, "[a b][it's][$HOME]"));
+    }
+
+    /// A background process the program leaves behind must not delay the
+    /// exit report. (This does not reproduce the Windows ConPTY case: Linux
+    /// hangs up the terminal when its session leader exits, so EOF comes
+    /// anyway. That case is covered by the Windows tests in CI.)
+    #[cfg(unix)]
+    #[test]
+    fn exit_is_reported_even_if_the_output_stays_open() {
+        let manager = PtyManager::new();
+        let (on_data, out) = collect();
+        let (tx, rx) = mpsc::channel();
+        let id = manager
+            .open(
+                &spec(shell("sleep 30 & echo bitti; exit 4", &[]), 80, 24),
+                on_data,
+                move |_, code| tx.send(code).unwrap(),
+            )
+            .unwrap();
+        let started = std::time::Instant::now();
+        assert_eq!(rx.recv_timeout(Duration::from_secs(10)).unwrap(), Some(4));
+        assert!(started.elapsed() < DRAIN + Duration::from_secs(2));
+        assert!(wait_for(&out, "bitti"));
+        assert!(!manager.is_open(id));
     }
 
     #[cfg(windows)]
