@@ -155,7 +155,11 @@ pub enum ParamKind {
     Folder,
     File,
     Number,
+    /// Passed as a single argument, spaces and all.
     Text,
+    /// Split like a shell line (quotes group) and passed as separate
+    /// arguments, e.g. a sub-command with its options.
+    Args,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -268,6 +272,12 @@ impl ToolManifest {
                     param.name
                 ));
             }
+            if param.kind == ParamKind::Args && param.flag.is_some() {
+                problem(format!(
+                    "run.params.{}: kind = \"args\" ile flag kullanılamaz",
+                    param.name
+                ));
+            }
             if !seen.insert(param.name.as_str()) {
                 problem(format!(
                     "run.params içinde \"{}\" iki kez geçiyor",
@@ -280,7 +290,7 @@ impl ToolManifest {
                     param.name
                 )),
                 (
-                    ParamKind::Folder | ParamKind::File | ParamKind::Text,
+                    ParamKind::Folder | ParamKind::File | ParamKind::Text | ParamKind::Args,
                     Some(ParamValue::Number(_)),
                 ) => problem(format!(
                     "run.params.{}: default bir metin olmalı",
@@ -449,6 +459,24 @@ mod tests {
         ];
         // wrong default type + bad flag + duplicate name
         assert_eq!(m.validate().len(), 3);
+    }
+
+    #[test]
+    fn args_params_take_text_defaults_and_no_flag() {
+        let mut m = local_tool();
+        m.run.params = vec![RunParam {
+            name: "command".into(),
+            kind: ParamKind::Args,
+            label: "Komut".into(),
+            flag: None,
+            default: Some(ParamValue::Text("list-models".into())),
+        }];
+        assert!(m.validate().is_empty());
+
+        m.run.params[0].flag = Some("--command".into());
+        m.run.params[0].default = Some(ParamValue::Number(1));
+        // flag with args + numeric default
+        assert_eq!(m.validate().len(), 2);
     }
 
     #[test]

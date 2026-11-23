@@ -116,7 +116,7 @@ args = []                        # her çalıştırmada en başa eklenen sabit a
 # Terminal araçları için kabuğun formda soracağı parametreler (sırayla):
 [[run.params]]
 name    = "repo"                 # benzersiz ad
-kind    = "folder"               # folder | file | number | text
+kind    = "folder"               # folder | file | number | text | args
 label   = "Repo klasörü"         # formdaki etiket
 # default = "..."                # yoksa alan zorunlu; number için sayı
 
@@ -128,6 +128,6 @@ flag    = "--days"               # isteğe bağlı: "--days 60" olarak geçer; y
 default = 180
 ```
 
-Komut satırı şöyle kurulur: `run.args` + her parametre bildirildiği sırayla (`<değer>` ya da `<flag> <değer>`) + formdaki "ek argümanlar" (tırnaklar desteklenir). Boş bırakılan alanın varsayılanı kullanılır; varsayılanı olmayan alan zorunludur.
+Komut satırı şöyle kurulur: `run.args` + her parametre bildirildiği sırayla (`<değer>` ya da `<flag> <değer>`) + formdaki "ek argümanlar" (tırnaklar desteklenir). `text` parametresinin değeri boşluklarıyla birlikte tek argüman olarak geçer; `args` parametresinin değeri ise ek argümanlar gibi bölünür (örn. Docky'deki `generate docker-compose --model base`). `args` ile `flag` birlikte kullanılamaz. Boş bırakılan alanın varsayılanı kullanılır; varsayılanı olmayan alan zorunludur.
 
 Şemanın Rust karşılığı ve kuralları `crates/mts-core/src/manifest.rs` (`validate()`), argüman kurma `crates/mts-core/src/args.rs`.

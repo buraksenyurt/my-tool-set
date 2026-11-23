@@ -1,7 +1,7 @@
 //! Turning the run form (parameter values + extra arguments) into argv.
 //!
 //! argv = `run.args` ++ each parameter in declared order (`<value>` or
-//! `<flag> <value>`; empty optional ones skipped) ++ extra arguments.
+//! `<flag> <value>`; `args` parameters split into several) ++ extra arguments.
 
 use std::collections::BTreeMap;
 
@@ -28,6 +28,10 @@ pub fn build_args(
         };
         if param.kind == ParamKind::Number && value.parse::<i64>().is_err() {
             return Err(format!("\"{}\" bir tam sayı olmalı", param.label));
+        }
+        if param.kind == ParamKind::Args {
+            args.extend(split_args(&value).map_err(|e| format!("\"{}\": {e}", param.label))?);
+            continue;
         }
         if let Some(flag) = &param.flag {
             args.push(flag.clone());
@@ -211,6 +215,49 @@ mod tests {
                 "docker compose.yml",
                 "-v"
             ]
+        );
+    }
+
+    #[test]
+    fn args_param_is_split_into_separate_arguments() {
+        let spec = run(
+            vec![param(
+                "command",
+                ParamKind::Args,
+                None,
+                Some(ParamValue::Text("list-models".into())),
+            )],
+            &[],
+        );
+        assert_eq!(
+            build_args(&spec, &values(&[]), "").unwrap(),
+            ["list-models"]
+        );
+        assert_eq!(
+            build_args(
+                &spec,
+                &values(&[(
+                    "command",
+                    " generate docker-compose --model base --add-redis --redis-port 6388 "
+                )]),
+                "--output \"my compose.yml\""
+            )
+            .unwrap(),
+            [
+                "generate",
+                "docker-compose",
+                "--model",
+                "base",
+                "--add-redis",
+                "--redis-port",
+                "6388",
+                "--output",
+                "my compose.yml"
+            ]
+        );
+        assert_eq!(
+            build_args(&spec, &values(&[("command", "generate \"açık")]), "").unwrap_err(),
+            "\"COMMAND\": Kapanmamış tırnak (\")"
         );
     }
 

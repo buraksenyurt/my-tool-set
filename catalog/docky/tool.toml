@@ -28,6 +28,6 @@ dev  = "dotnet run --project src/DockyApp.csproj --"
 
 [[run.params]]
 name    = "command"
-kind    = "text"
-label   = "Komut (generate · list-models · list-services)"
+kind    = "args"
+label   = "Komut ve seçenekleri (örn. generate docker-compose --model base)"
 default = "list-models"
