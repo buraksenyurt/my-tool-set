@@ -163,11 +163,13 @@ export async function onRunEvents(handlers: {
 
 // --- Embedded terminal ----------------------------------------------------
 
-/** Starts a terminal tool; output bytes arrive on `onData`. */
+/** Starts a terminal tool; output bytes arrive on `onData`. An empty
+ * `workdir` runs it in its own folder. */
 export async function openTerminal(
   id: string,
   values: Record<string, string>,
   extra: string,
+  workdir: string,
   cols: number,
   rows: number,
   onData: (bytes: Uint8Array) => void,
@@ -175,7 +177,7 @@ export async function openTerminal(
   if (!inTauri()) return demoTerminals.open(id, cols, rows, onData);
   const channel = new Channel<ArrayBuffer>();
   channel.onmessage = (buffer) => onData(new Uint8Array(buffer));
-  return call<TerminalDto>("open_terminal", { id, values, extra, cols, rows, onData: channel });
+  return call<TerminalDto>("open_terminal", { id, values, extra, cwd: workdir || null, cols, rows, onData: channel });
 }
 
 export async function writeTerminal(sessionId: number, data: string): Promise<void> {

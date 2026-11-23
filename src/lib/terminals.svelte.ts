@@ -16,6 +16,8 @@ export interface TerminalSession {
   toolName: string;
   values: Record<string, string>;
   extra: string;
+  /** Working folder asked for in the form; empty = the tool's own folder. */
+  workdir: string;
   sessionId: number | null;
   commandLine: string;
   cwd: string;
@@ -53,7 +55,7 @@ class TerminalsState {
   }
 
   /** Opens a new tab running the tool with these form values. */
-  async open(toolId: string, toolName: string, values: Record<string, string>, extra: string) {
+  async open(toolId: string, toolName: string, values: Record<string, string>, extra: string, workdir = "") {
     const tabId = `term:${++this.counter}`;
     const term = new Terminal({
       cursorBlink: true,
@@ -71,6 +73,7 @@ class TerminalsState {
       toolName,
       values,
       extra,
+      workdir,
       sessionId: null,
       commandLine: "",
       cwd: "",
@@ -126,7 +129,7 @@ class TerminalsState {
     s.error = null;
     s.code = null;
     try {
-      const dto = await openTerminal(s.toolId, s.values, s.extra, s.term.cols, s.term.rows, (bytes) =>
+      const dto = await openTerminal(s.toolId, s.values, s.extra, s.workdir, s.term.cols, s.term.rows, (bytes) =>
         this.sessions[tabId]?.term.write(bytes),
       );
       // The tab may have been closed while starting.

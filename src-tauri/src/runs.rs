@@ -3,6 +3,7 @@
 
 use mts_catalog::settings::{LocalStatus, local_status};
 use mts_core::{Delivery, HostMode, Platform};
+use mts_runner::pty::expand_dir;
 use mts_runner::{EventSink, LogLine, Program, RunInfo, RunKind, RunState, Spec, Stream};
 use tauri::{AppHandle, Emitter, State};
 
@@ -100,7 +101,7 @@ pub async fn start_tool(id: String, state: State<'_, AppState>) -> Result<RunDto
                         tool: id.clone(),
                         kind: RunKind::Tool,
                         program: Program::Shell {
-                            command: m.run.dev.clone().unwrap_or_default(),
+                            command: expand_dir(m.run.dev.as_deref().unwrap_or_default(), &folder),
                         },
                         cwd: folder,
                     },

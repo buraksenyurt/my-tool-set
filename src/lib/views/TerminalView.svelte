@@ -95,7 +95,10 @@
 <section class="terminal" class:hidden={!visible} aria-label="{session.toolName} terminali">
   <header>
     <strong>{session.toolName}</strong>
-    <code class="cmd" title={session.cwd}>{session.commandLine || "başlatılıyor…"}</code>
+    <code class="cmd" title={session.commandLine}>{session.commandLine || "başlatılıyor…"}</code>
+    {#if session.cwd}
+      <span class="cwd" title="Çalışma klasörü: {session.cwd}">📁 {session.cwd}</span>
+    {/if}
     <span class="status {session.status}">
       {#if session.status === "running"}
         <span class="dot"></span>Çalışıyor
@@ -145,6 +148,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--text-secondary);
+  }
+
+  .cwd {
+    flex: 0 1 auto;
+    max-width: 40%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
     color: var(--text-secondary);
   }
 

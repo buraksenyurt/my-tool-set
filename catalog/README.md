@@ -128,6 +128,8 @@ flag    = "--days"               # isteğe bağlı: "--days 60" olarak geçer; y
 default = 180
 ```
 
-Komut satırı şöyle kurulur: `run.args` + her parametre bildirildiği sırayla (`<değer>` ya da `<flag> <değer>`) + formdaki "ek argümanlar" (tırnaklar desteklenir). `text` parametresinin değeri boşluklarıyla birlikte tek argüman olarak geçer; `args` parametresinin değeri ise ek argümanlar gibi bölünür (örn. Docky'deki `generate docker-compose --model base`). `args` ile `flag` birlikte kullanılamaz. Boş bırakılan alanın varsayılanı kullanılır; varsayılanı olmayan alan zorunludur.
+Komut satırı şöyle kurulur: `run.args` + her parametre bildirildiği sırayla (`<değer>` ya da `<flag> <değer>`) + formdaki "ek argümanlar" (tırnaklar desteklenir). `text` parametresinin değeri boşluklarıyla birlikte tek argüman olarak geçer; `args` parametresinin değeri ise ek argümanlar gibi bölünür (örn. Docky'deki `generate docker-compose --model base`). `args` ile `flag` birlikte kullanılamaz.
+
+Terminal araçlarının formunda bir de **Çalışma klasörü** alanı vardır. Boş bırakılırsa araç kendi klasöründe (kurulum ya da yerel klasör) çalışır; doluysa seçilen klasörde başlar, böylece aracın göreli yollara yazdığı dosyalar (örn. Docky'nin `docker-compose.yml`'i) oraya düşer. Kaynaktan çalışan bir aracın `run.dev` komutu göreli yol içeriyorsa aracın klasörü yerine `{dir}` yazılmalıdır (örn. `dotnet run --project {dir}/src/DockyApp.csproj --`); kabuk bunu aracın klasörüyle değiştirir. `{dir}` kullanmayan bir `run.dev` aracı başka klasörde çalıştırılamaz. Boş bırakılan alanın varsayılanı kullanılır; varsayılanı olmayan alan zorunludur.
 
 Şemanın Rust karşılığı ve kuralları `crates/mts-core/src/manifest.rs` (`validate()`), argüman kurma `crates/mts-core/src/args.rs`.

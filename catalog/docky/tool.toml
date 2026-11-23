@@ -24,7 +24,7 @@ command = "dotnet build src/DockyApp.csproj"
 
 [run]
 host = "terminal"
-dev  = "dotnet run --project src/DockyApp.csproj --"
+dev  = "dotnet run --project {dir}/src/DockyApp.csproj --"
 
 [[run.params]]
 name    = "command"

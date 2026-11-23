@@ -1,6 +1,7 @@
 <script lang="ts">
   // The run form for terminal tools: one field per run.params entry, plus
-  // free-form extra arguments. Last values are remembered per tool.
+  // free-form extra arguments and the working folder. Last values are
+  // remembered per tool.
   import { untrack } from "svelte";
   import { pickPath } from "../api";
   import type { ToolDto } from "../bindings/ToolDto";
@@ -13,7 +14,7 @@
   const initial = untrack(() => tool);
   const KEY = `my-tool-set.run-form.${initial.id}`;
 
-  function load(): { values: Record<string, string>; extra: string } {
+  function load(): { values: Record<string, string>; extra: string; workdir?: string } {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) return JSON.parse(raw);
@@ -30,6 +31,8 @@
     ),
   );
   let extra = $state(saved.extra ?? "");
+  // Where the tool runs (and writes relative files); empty = its own folder.
+  let workdir = $state(saved.workdir ?? "");
   let error = $state<string | null>(null);
 
   // Number inputs bind numbers; Rust takes every value as text.
@@ -41,6 +44,11 @@
     if (picked) values[name] = picked;
   }
 
+  async function browseWorkdir() {
+    const picked = await pickPath("folder", workdir);
+    if (picked) workdir = picked;
+  }
+
   async function run(e: SubmitEvent) {
     e.preventDefault();
     error = null;
@@ -50,11 +58,11 @@
     }
     const clean = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, text(v)]));
     try {
-      localStorage.setItem(KEY, JSON.stringify({ values: clean, extra }));
+      localStorage.setItem(KEY, JSON.stringify({ values: clean, extra, workdir }));
     } catch {
       /* ignore */
     }
-    await terminals.open(tool.id, tool.name, clean, text(extra));
+    await terminals.open(tool.id, tool.name, clean, text(extra), workdir.trim());
   }
 </script>
 
@@ -85,6 +93,13 @@
     <span class="label">Ek argümanlar <span class="muted">(isteğe bağlı)</span></span>
     <span class="field">
       <input type="text" bind:value={extra} placeholder={'örn. --verbose "boşluklu değer"'} spellcheck="false" />
+    </span>
+  </label>
+  <label>
+    <span class="label">Çalışma klasörü <span class="muted">(isteğe bağlı · aracın ürettiği dosyalar buraya yazılır)</span></span>
+    <span class="field">
+      <input type="text" bind:value={workdir} placeholder="Boş bırakılırsa aracın kendi klasörü" spellcheck="false" />
+      <button type="button" class="ghost" onclick={browseWorkdir}>Seç…</button>
     </span>
   </label>
   <div class="actions">

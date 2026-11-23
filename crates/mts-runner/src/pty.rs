@@ -11,7 +11,7 @@
 
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use std::sync::mpsc;
@@ -303,6 +303,16 @@ fn build(program: &PtyProgram) -> CommandBuilder {
     }
 }
 
+/// The placeholder in `run.dev` that stands for the tool's folder.
+pub const DIR_PLACEHOLDER: &str = "{dir}";
+
+/// Puts the tool folder, quoted for the shell, in place of `{dir}` in a
+/// `run.dev` command, so the command keeps working when the program runs in
+/// another working folder.
+pub fn expand_dir(command: &str, folder: &Path) -> String {
+    command.replace(DIR_PLACEHOLDER, &quote(&folder.display().to_string()))
+}
+
 /// Quotes one argument for the platform shell when it needs it.
 #[cfg(windows)]
 pub fn quote(arg: &str) -> String {
@@ -328,6 +338,26 @@ pub fn quote(arg: &str) -> String {
 mod tests {
     use super::*;
     use std::sync::mpsc;
+
+    #[test]
+    fn expands_the_tool_folder_placeholder() {
+        assert_eq!(
+            expand_dir(
+                "dotnet run --project {dir}/src/App.csproj --",
+                Path::new("/tools/docky")
+            ),
+            "dotnet run --project /tools/docky/src/App.csproj --"
+        );
+        assert_eq!(
+            expand_dir("npm run dev", Path::new("/tools/x")),
+            "npm run dev"
+        );
+        #[cfg(not(windows))]
+        assert_eq!(
+            expand_dir("run {dir}/x", Path::new("/my tools")),
+            "run '/my tools'/x"
+        );
+    }
     use std::time::Duration;
 
     type Output = Arc<Mutex<Vec<u8>>>;
